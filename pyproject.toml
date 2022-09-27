@@ -1,0 +1,25 @@
+[tool.poetry]
+name = "cpsc490"
+version = "0.1.0"
+description = ""
+authors = ["Abhijit Gupta <avgupta456@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+torch = "1.12.0"
+torch-scatter = { version = "2.0.9", source="torch"}
+torch-sparse = { version = "0.6.14", source="torch"}
+torch-cluster = { version = "1.6.0", source="torch"}
+torch-spline-conv = { version = "1.2.1", source="torch"}
+torch-geometric = "^2.1.0.post1"
+
+[tool.poetry.dev-dependencies]
+
+[[tool.poetry.source]]
+name = "torch"
+url = "https://data.pyg.org/whl/torch-1.12.0+cpu.html"
+secondary = true
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
