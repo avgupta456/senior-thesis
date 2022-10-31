@@ -3,6 +3,7 @@ poetry.lock
 
 data
 models
+figures
 
 __pycache__
 .ipynb_checkpoints

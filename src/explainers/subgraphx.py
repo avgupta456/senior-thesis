@@ -42,6 +42,7 @@ class SubgraphX(Explainer):
 
             diff_avg = sum(pred_diffs) / len(pred_diffs)
             diff_std = statistics.stdev(pred_diffs) / np.sqrt(self.T)
-            output[subset[neighbor].item()] = 1 / (1 + np.exp(-(diff_avg / diff_std)))
+            logit = np.clip(diff_avg / diff_std, -10, 10)
+            output[subset[neighbor].item()] = 1 / (1 + np.exp(-logit))
 
         return output
