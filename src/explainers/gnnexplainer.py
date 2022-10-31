@@ -14,7 +14,8 @@ class _GNNExplainer(PyG_GNNExplainer):
     coeffs = {
         "edge_size": 0.10,
         "edge_reduction": "sum",
-        "edge_ent": 1.0,
+        # "edge_ent": 1.0,
+        "edge_ent": -1.0,
     }
 
     def _initialize_masks(self, x, edge_index, sub_edge_mask=None):
@@ -29,6 +30,7 @@ class _GNNExplainer(PyG_GNNExplainer):
             mask[sub_edge_mask] = torch.randn(E_1) * std
             self.edge_mask = torch.nn.Parameter(mask)
 
+    """
     def _loss(self, log_logits, prediction, node_idx=None):
         error_loss = -log_logits[prediction]
 
@@ -44,6 +46,15 @@ class _GNNExplainer(PyG_GNNExplainer):
             + self.coeffs["edge_ent"] * edge_ent_loss
         )
 
+        return loss
+    """
+
+    def _loss(self, log_logits, prediction, node_idx=None):
+        error_loss = -log_logits[prediction]
+        m = self.edge_mask[self.sub_edge_mask].sigmoid()
+        ent = -m * torch.log(m + EPS) - (1 - m) * torch.log(1 - m + EPS)
+        edge_ent_loss = ent.mean()
+        loss = -error_loss * (1 - torch.mean(m)) - 1 * edge_ent_loss
         return loss
 
     def explain_edge(self, node_idx_1, node_idx_2, x, edge_index):
