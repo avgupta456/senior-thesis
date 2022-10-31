@@ -1,3 +1,5 @@
+import warnings
+
 import torch
 from torch import nn
 import torch.nn.functional as F
@@ -6,6 +8,10 @@ from torch_geometric.utils import negative_sampling
 from sklearn.metrics import roc_auc_score, accuracy_score
 
 from dataset import device, dataset, train_data, val_data, test_data
+
+
+warnings.filterwarnings("ignore", category=UserWarning) 
+
 
 class SimpleNet(torch.nn.Module):
     def __init__(self, in_channels, hidden_channels, out_channels):
@@ -144,5 +150,5 @@ if __name__ == "__main__":
     _, model_dict = train_model(epochs)
 
     # Save the models
-    torch.save(simple_model_dict, './link_pred/models/simple_model.pt')
-    torch.save(model_dict, './link_pred/models/model.pt')
+    torch.save(simple_model_dict, './models/simple_model.pt')
+    torch.save(model_dict, './models/model.pt')
