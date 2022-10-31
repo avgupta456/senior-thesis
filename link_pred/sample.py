@@ -4,6 +4,7 @@ from dataset import device, dataset, test_data
 from pred import Net
 
 from explainers.gnnexplainer import GNNExplainer
+from explainers.subgraphx import SubgraphX
 
 # Load the dataset and model
 x, edge_index = test_data.x, test_data.edge_index
@@ -17,6 +18,15 @@ gnnexplainer = GNNExplainer(model, x, edge_index, epochs=200, lr=0.1)
 output = gnnexplainer.explain_edge(node_idx_1, node_idx_2)
 
 print("GNNExplainer Output")
-for x, y in sorted(output.items(), key=lambda x: -x[1]):
-    print(x, "\t", round(y, 4))
+for node_idx, weight in sorted(output.items(), key=lambda x: -x[1]):
+    print(node_idx, "\t", round(weight, 4))
+print()
+
+# SubgraphX
+subgraphx = SubgraphX(model, x, edge_index, T=10)
+output = subgraphx.explain_edge(node_idx_1, node_idx_2)
+
+print("SubgraphX Output")
+for node_idx, weight in sorted(output.items(), key=lambda x: -x[1]):
+    print(node_idx, "\t", round(weight, 4))
 print()
