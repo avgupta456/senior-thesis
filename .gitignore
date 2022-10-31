@@ -2,6 +2,7 @@ poetry.lock
 .venv
 
 data
+models
 
 __pycache__
 .ipynb_checkpoints

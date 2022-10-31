@@ -18,6 +18,8 @@ def sample_gnnexplainer(model, x, edge_index, node_idx_1, node_idx_2):
         print(node_idx, "\t", round(weight, 4))
     print()
 
+    return output
+
 
 def sample_subgraphx(model, x, edge_index, node_idx_1, node_idx_2):
     # SubgraphX, T * size(neighborhood) queries per explanation
@@ -29,9 +31,11 @@ def sample_subgraphx(model, x, edge_index, node_idx_1, node_idx_2):
         print(node_idx, "\t", round(weight, 4))
     print()
 
+    return output
+
 
 def sample_random(model, x, edge_index, node_idx_1, node_idx_2):
-    # Random
+    # Random, 0 queries per explanation
     random_explainer = RandomExplainer(model, x, edge_index)
     output = random_explainer.explain_edge(node_idx_1, node_idx_2)
 
@@ -39,6 +43,8 @@ def sample_random(model, x, edge_index, node_idx_1, node_idx_2):
     for node_idx, weight in sorted(output.items(), key=lambda x: -x[1]):
         print(node_idx, "\t", round(weight, 4))
     print()
+
+    return output
 
 
 if __name__ == "__main__":
