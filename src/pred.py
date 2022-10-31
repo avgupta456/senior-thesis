@@ -25,9 +25,9 @@ class SimpleNet(torch.nn.Module):
     def decode(self, z, edge_label_index):
         return (z[edge_label_index[0]] * z[edge_label_index[1]]).sum(dim=-1)
 
-    def forward(self, x, edge_index, data=None):
+    def forward(self, x, edge_index, edge_label_index, data=None):
         z = self.encode(x, edge_index)
-        out = self.decode(z, edge_index)
+        out = self.decode(z, edge_label_index)
         return torch.hstack((-out, out)).T
 
 

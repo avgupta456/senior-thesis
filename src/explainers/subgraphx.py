@@ -1,54 +1,47 @@
 import statistics
 
 import numpy as np
-import torch
+from torch_geometric.utils import get_num_hops
 
 from src.explainers.explainer import Explainer
+from src.utils import edge_centered_subgraph, get_neighbors, mask_nodes
 
 
 class SubgraphX(Explainer):
     def __init__(self, pred_model, x, edge_index, T=10):
         super().__init__(pred_model, x, edge_index)
 
+        self.num_hops = get_num_hops(pred_model)
         self.T = T
 
     def explain_edge(self, node_idx_1, node_idx_2):
-        node_1_neighbors = set(
-            self.edge_index[:, (self.edge_index[0] == node_idx_1)][1].cpu().numpy()
+        # Only operate on a k-hop subgraph around `node_idx_1` and `node_idx_2.
+        (x, edge_index, mapping, subset, _) = edge_centered_subgraph(
+            node_idx_1, node_idx_2, self.x, self.edge_index, self.num_hops
         )
-        node_2_neighbors = set(
-            self.edge_index[:, (self.edge_index[0] == node_idx_2)][1].cpu().numpy()
-        )
-        neighbors = np.array(list(node_1_neighbors.union(node_2_neighbors)))
+        edge_label_index = mapping.unsqueeze(1)
+
+        neighbors = get_neighbors(edge_index, edge_label_index[0], edge_label_index[1])
 
         output = {}
         for neighbor in neighbors:
             pred_diffs = []
             for _ in range(self.T):
-                temp_x = self.x.clone()
-                fake_x = temp_x.clone()
-                fake_x[neighbors] = 0
+                S_filter = np.ones(x.shape[0], dtype=bool)
+                S_filter[neighbors] = np.random.random(neighbors.shape[0]) > 0.5
+                S_filter[neighbor] = False
 
-                S_filter = neighbors[np.random.random(neighbors.shape[0]) > 0.5]
-                fake_x[S_filter] = temp_x[S_filter]
-                fake_x[neighbor] = 0
-                old_z = self.pred_model.encode(fake_x, self.edge_index)
-                old_pred = self.pred_model.decode(
-                    old_z, torch.tensor([[node_idx_1], [node_idx_2]])
-                )
+                temp_x = mask_nodes(x, S_filter)
+                old_pred = self.pred_model(temp_x, edge_index, edge_label_index)[1]
 
-                fake_x[neighbor] = temp_x[neighbor]
-                new_z = self.pred_model.encode(fake_x, self.edge_index)
-                new_pred = self.pred_model.decode(
-                    new_z, torch.tensor([[node_idx_1], [node_idx_2]])
-                )
+                temp_x[neighbor] = x[neighbor]
+                new_pred = self.pred_model(temp_x, edge_index, edge_label_index)[1]
 
                 pred_diff = new_pred - old_pred
                 pred_diffs.append(pred_diff.item())
 
-            diff_avg, diff_std = sum(pred_diffs) / len(pred_diffs), statistics.stdev(
-                pred_diffs
-            ) / np.sqrt(self.T)
-            output[neighbor] = 1 / (1 + np.exp(-(diff_avg / diff_std)))
+            diff_avg = sum(pred_diffs) / len(pred_diffs)
+            diff_std = statistics.stdev(pred_diffs) / np.sqrt(self.T)
+            output[subset[neighbor].item()] = 1 / (1 + np.exp(-(diff_avg / diff_std)))
 
         return output

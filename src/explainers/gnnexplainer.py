@@ -3,9 +3,9 @@ from math import sqrt
 import torch
 from torch_geometric.nn import GNNExplainer as PyG_GNNExplainer
 from torch_geometric.nn.models.explainer import set_masks
-from torch_geometric.utils import k_hop_subgraph
 
 from src.explainers.explainer import Explainer
+from src.utils import edge_centered_subgraph
 
 EPS = 1e-15
 
@@ -46,55 +46,25 @@ class _GNNExplainer(PyG_GNNExplainer):
 
         return loss
 
-    def subgraph(self, node_idx_1, node_idx_2, x, edge_index, **kwargs):
-        num_nodes, _ = x.size(0), edge_index.size(1)
-
-        subset_1, _, _, edge_mask_1 = k_hop_subgraph(
-            node_idx_1,
-            self.num_hops,
-            edge_index,
-            num_nodes=num_nodes,
-            flow=self._flow(),
-        )
-        subset_2, _, _, edge_mask_2 = k_hop_subgraph(
-            node_idx_2,
-            self.num_hops,
-            edge_index,
-            num_nodes=num_nodes,
-            flow=self._flow(),
-        )
-
-        # Combines two node-centered subgraphs
-        temp_node_idx = edge_index[0].new_full((num_nodes,), -1)  # full size
-        edge_mask = edge_mask_1 | edge_mask_2
-        edge_index = edge_index[:, edge_mask]  # filters out edges
-        subset = torch.cat((subset_1, subset_2)).unique()
-        temp_node_idx[subset] = torch.arange(subset.size(0), device=edge_index.device)
-        edge_index = temp_node_idx[edge_index]  # maps edge_index to [0, n]
-        x = x[subset]  # filters out nodes
-        mapping = torch.tensor(
-            [
-                (subset == node_idx_1).nonzero().item(),
-                (subset == node_idx_2).nonzero().item(),
-            ]
-        )
-
-        # Only optimizes the edges from neighbors to node_1/node_2, other direction not needed for prediction
-        sub_edge_mask = (edge_index[1] == mapping[0]) | (edge_index[1] == mapping[1])
-
-        return x, edge_index, mapping, edge_mask, subset, sub_edge_mask
-
     def explain_edge(self, node_idx_1, node_idx_2, x, edge_index):
         self.model.eval()
         self._clear_masks()
 
-        _, num_edges = x.size(0), edge_index.size(1)
+        num_edges = edge_index.size(1)
 
         # Only operate on a k-hop subgraph around `node_idx_1` and `node_idx_2.
-        x, edge_index, mapping, hard_edge_mask, subset, sub_edge_mask = self.subgraph(
-            node_idx_1, node_idx_2, x, edge_index
+        (
+            x,
+            edge_index,
+            mapping,
+            _,
+            hard_edge_mask,
+        ) = edge_centered_subgraph(node_idx_1, node_idx_2, x, edge_index, self.num_hops)
+
+        # Only optimizes the edges from neighbors to node_1/node_2, other direction not needed for prediction
+        self.sub_edge_mask = (edge_index[1] == mapping[0]) | (
+            edge_index[1] == mapping[1]
         )
-        self.sub_edge_mask = sub_edge_mask
         edge_label_index = mapping.unsqueeze(1)
 
         # Get the initial prediction
@@ -102,7 +72,7 @@ class _GNNExplainer(PyG_GNNExplainer):
             x, edge_index, edge_label_index=edge_label_index
         )
 
-        self._initialize_masks(x, edge_index, sub_edge_mask)
+        self._initialize_masks(x, edge_index, self.sub_edge_mask)
         self.to(x.device)
 
         set_masks(self.model, self.edge_mask, edge_index, apply_sigmoid=True)

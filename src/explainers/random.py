@@ -1,6 +1,7 @@
 import numpy as np
 
 from src.explainers.explainer import Explainer
+from src.utils import get_neighbors
 
 
 class RandomExplainer(Explainer):
@@ -8,13 +9,7 @@ class RandomExplainer(Explainer):
         super().__init__(pred_model, x, edge_index)
 
     def explain_edge(self, node_idx_1, node_idx_2):
-        node_1_neighbors = set(
-            self.edge_index[:, (self.edge_index[0] == node_idx_1)][1].cpu().numpy()
-        )
-        node_2_neighbors = set(
-            self.edge_index[:, (self.edge_index[0] == node_idx_2)][1].cpu().numpy()
-        )
-        neighbors = np.array(list(node_1_neighbors.union(node_2_neighbors)))
+        neighbors = get_neighbors(self.edge_index, node_idx_1, node_idx_2)
 
         output = {}
         for neighbor in neighbors:
