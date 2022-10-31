@@ -1,0 +1,11 @@
+{
+  "name": "cpsc490",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "dataset": "poetry run python -m src.dataset",
+    "pred": "poetry run python -m src.pred",
+    "sample": "poetry run python -m src.sample",
+    "isort": "poetry run isort . --src-path=./src --multi-line=3 --trailing-comma --line-length=88 --combine-as --ensure-newline-before-comments"
+  }
+}

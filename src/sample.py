@@ -1,18 +1,17 @@
 import torch
 
-from dataset import device, dataset, test_data
-from pred import Net
-
-from explainers.gnnexplainer import GNNExplainer
-from explainers.subgraphx import SubgraphX
-from explainers.random import RandomExplainer
+from src.dataset import dataset, device, test_data
+from src.explainers.gnnexplainer import GNNExplainer
+from src.explainers.random import RandomExplainer
+from src.explainers.subgraphx import SubgraphX
+from src.pred import Net
 
 # Load the dataset and model
 x, edge_index = test_data.x, test_data.edge_index
 node_idx_1, node_idx_2 = 24, 187
 
 model = Net(dataset.num_features, 128, 32).to(device)
-model.load_state_dict(torch.load('./models/model.pt'))
+model.load_state_dict(torch.load("./models/model.pt"))
 
 # GNNExplainer
 gnnexplainer = GNNExplainer(model, x, edge_index, epochs=200, lr=0.1)

@@ -1,16 +1,15 @@
 import warnings
 
 import torch
-from torch import nn
 import torch.nn.functional as F
+from sklearn.metrics import accuracy_score, roc_auc_score
+from torch import nn
 from torch_geometric.nn import GCNConv
 from torch_geometric.utils import negative_sampling
-from sklearn.metrics import roc_auc_score, accuracy_score
 
-from dataset import device, dataset, train_data, val_data, test_data
+from src.dataset import dataset, device, test_data, train_data, val_data
 
-
-warnings.filterwarnings("ignore", category=UserWarning) 
+warnings.filterwarnings("ignore", category=UserWarning)
 
 
 class SimpleNet(torch.nn.Module):
@@ -25,7 +24,7 @@ class SimpleNet(torch.nn.Module):
 
     def decode(self, z, edge_label_index):
         return (z[edge_label_index[0]] * z[edge_label_index[1]]).sum(dim=-1)
-    
+
     def forward(self, x, edge_index, data=None):
         z = self.encode(x, edge_index)
         out = self.decode(z, edge_index)
@@ -38,7 +37,7 @@ class Net(torch.nn.Module):
         # TODO: look into SAGEConv, GATConv, GINConv, comparison between
         self.conv1 = GCNConv(in_channels, hidden_channels)
         self.conv2 = GCNConv(hidden_channels, out_channels)
-        
+
         self.W1 = nn.Linear(out_channels * 2, out_channels)
         self.W2 = nn.Linear(out_channels, 1)
 
@@ -49,12 +48,12 @@ class Net(torch.nn.Module):
     def decode(self, z, edge_label_index):
         z1 = torch.cat((z[edge_label_index[0]], z[edge_label_index[1]]), dim=1)
         out1 = self.W2(F.relu(self.W1(z1)).squeeze())
-        
+
         z2 = torch.cat((z[edge_label_index[1]], z[edge_label_index[0]]), dim=1)
         out2 = self.W2(F.relu(self.W1(z2)).squeeze())
-        
+
         return (out1 + out2) / 2
-    
+
     def forward(self, x, edge_index, edge_label_index, data=None):
         z = self.encode(x, edge_index)
         out = self.decode(z, edge_label_index)
@@ -68,14 +67,16 @@ def train(model, optimizer, criterion, data):
 
     # We perform a new round of negative sampling for every training epoch:
     neg_edge_index = negative_sampling(
-        edge_index=data.edge_index, 
+        edge_index=data.edge_index,
         num_nodes=data.num_nodes,
-        num_neg_samples=data.edge_label_index.shape[1], 
-        method='sparse'
+        num_neg_samples=data.edge_label_index.shape[1],
+        method="sparse",
     )
-    
+
     edge_label_index = torch.cat([data.edge_label_index, neg_edge_index], dim=-1)
-    edge_label = torch.cat([data.edge_label, data.edge_label.new_zeros(neg_edge_index.size(1))], dim=0)
+    edge_label = torch.cat(
+        [data.edge_label, data.edge_label.new_zeros(neg_edge_index.size(1))], dim=0
+    )
 
     out = model.decode(z, edge_label_index).view(-1)
     loss = criterion(out, edge_label)
@@ -111,9 +112,11 @@ def train_simple_model(epochs):
             final_test_acc = test_acc
             best_model_dict = simple_model.state_dict()
         if epoch % 50 == 0:
-            print(f'Epoch: {epoch:03d}, Loss: {loss:.4f}, Val: {val_auc:.4f} {val_acc:.4f}, Test: {test_auc:.4f} {test_acc:.4f}')
+            print(
+                f"Epoch: {epoch:03d}, Loss: {loss:.4f}, Val: {val_auc:.4f} {val_acc:.4f}, Test: {test_auc:.4f} {test_acc:.4f}"
+            )
 
-    print(f'Final Test: {final_test_auc:.4f} {final_test_acc:.4f}')
+    print(f"Final Test: {final_test_auc:.4f} {final_test_acc:.4f}")
     print()
 
     return simple_model, best_model_dict
@@ -136,12 +139,15 @@ def train_model(epochs):
             final_test_acc = test_acc
             best_model_dict = model.state_dict()
         if epoch % 50 == 0:
-            print(f'Epoch: {epoch:03d}, Loss: {loss:.4f}, Val: {val_auc:.4f} {val_acc:.4f}, Test: {test_auc:.4f} {test_acc:.4f}')
+            print(
+                f"Epoch: {epoch:03d}, Loss: {loss:.4f}, Val: {val_auc:.4f} {val_acc:.4f}, Test: {test_auc:.4f} {test_acc:.4f}"
+            )
 
-    print(f'Final Test: {final_test_auc:.4f} {final_test_acc:.4f}')
+    print(f"Final Test: {final_test_auc:.4f} {final_test_acc:.4f}")
     print()
 
     return model, best_model_dict
+
 
 if __name__ == "__main__":
     epochs = 1000
@@ -150,5 +156,5 @@ if __name__ == "__main__":
     _, model_dict = train_model(epochs)
 
     # Save the models
-    torch.save(simple_model_dict, './models/simple_model.pt')
-    torch.save(model_dict, './models/model.pt')
+    torch.save(simple_model_dict, "./models/simple_model.pt")
+    torch.save(model_dict, "./models/model.pt")

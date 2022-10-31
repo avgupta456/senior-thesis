@@ -19,6 +19,10 @@ tqdm = "^4.64.1"
 pandas = "^1.5.0"
 
 [tool.poetry.dev-dependencies]
+black = "^22.10.0"
+flake8 = "^5.0.4"
+isort = "^5.10.1"
+pyinstrument = "^4.3.0"
 
 [[tool.poetry.source]]
 name = "torch"
