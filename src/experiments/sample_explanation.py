@@ -4,6 +4,7 @@ from src.dataset import dataset, device, test_data
 from src.explainers.gnnexplainer import GNNExplainer
 from src.explainers.random import RandomExplainer
 from src.explainers.subgraphx import SubgraphX
+from src.explainers.edge_subgraphx import EdgeSubgraphX
 from src.pred import Net
 from src.utils import get_neighbors
 
@@ -27,6 +28,19 @@ def sample_subgraphx(model, x, edge_index, node_idx_1, node_idx_2):
     output = subgraphx.explain_edge(node_idx_1, node_idx_2)
 
     print("SubgraphX Output")
+    for node_idx, weight in sorted(output.items(), key=lambda x: -x[1]):
+        print(node_idx, "\t", round(weight, 4))
+    print()
+
+    return output
+
+
+def sample_edge_subgraphx(model, x, edge_index, node_idx_1, node_idx_2):
+    # EdgeSubgraphX, T * size(neighborhood) queries per explanation
+    edge_subgraphx = EdgeSubgraphX(model, x, edge_index, T=10)
+    output = edge_subgraphx.explain_edge(node_idx_1, node_idx_2)
+
+    print("EdgeSubgraphX Output")
     for node_idx, weight in sorted(output.items(), key=lambda x: -x[1]):
         print(node_idx, "\t", round(weight, 4))
     print()
@@ -64,4 +78,5 @@ if __name__ == "__main__":
     # Sample the explainers
     sample_gnnexplainer(model, x, edge_index, node_idx_1, node_idx_2)
     sample_subgraphx(model, x, edge_index, node_idx_1, node_idx_2)
+    sample_edge_subgraphx(model, x, edge_index, node_idx_1, node_idx_2)
     sample_random(model, x, edge_index, node_idx_1, node_idx_2)
