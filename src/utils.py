@@ -4,6 +4,22 @@ from numpy import ndarray
 from torch_geometric.utils import k_hop_subgraph
 
 
+def sigmoid(x):
+    if isinstance(x, torch.Tensor):
+        return torch.sigmoid(x)
+    return 1 / (1 + np.exp(-x))
+
+
+def tensor_to_numpy(x):
+    return x.detach().cpu().numpy()
+
+
+def _to_numpy(x):
+    if isinstance(x, torch.Tensor):
+        return tensor_to_numpy(x)
+    return x
+
+
 def edge_centered_subgraph(node_idx_1, node_idx_2, x, edge_index, num_hops):
     num_nodes = x.size(0)
 

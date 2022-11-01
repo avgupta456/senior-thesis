@@ -4,7 +4,7 @@ import numpy as np
 from torch_geometric.utils import get_num_hops
 
 from src.explainers.explainer import Explainer
-from src.utils import edge_centered_subgraph, get_neighbors, mask_nodes
+from src.utils import edge_centered_subgraph, get_neighbors, mask_nodes, sigmoid
 
 
 class SubgraphX(Explainer):
@@ -42,7 +42,7 @@ class SubgraphX(Explainer):
 
             diff_avg = sum(pred_diffs) / len(pred_diffs)
             diff_std = statistics.stdev(pred_diffs) / np.sqrt(self.T)
-            logit = np.clip(diff_avg / diff_std, -10, 10)
-            output[subset[neighbor].item()] = 1 / (1 + np.exp(-logit))
+            logit = diff_avg / diff_std / 10
+            output[subset[neighbor].item()] = sigmoid(logit)
 
         return output
