@@ -1,11 +1,11 @@
 import torch
 
 from src.dataset import dataset, device, test_data
-from src.pred import Net
 from src.experiments.vary_sparsity.base import (
     run_experiment,
     sample_gnnexplainer as _sample_gnnexplainer,
 )
+from src.pred import Net
 
 
 def sample_gnnexplainer(epochs):

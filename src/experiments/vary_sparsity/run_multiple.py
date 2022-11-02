@@ -1,20 +1,20 @@
-from collections import defaultdict
 import json
+from collections import defaultdict
 
-import torch
 import matplotlib.pyplot as plt
+import torch
 
 
 def get_data():
     from src.dataset import dataset, device, test_data
-    from src.pred import Net
     from src.experiments.vary_sparsity.base import (
         run_experiment,
-        sample_gnnexplainer,
-        sample_subgraphx,
         sample_edge_subgraphx,
+        sample_gnnexplainer,
         sample_random,
+        sample_subgraphx,
     )
+    from src.pred import Net
 
     model = Net(dataset.num_features, 128, 32).to(device)
     model.load_state_dict(torch.load("./models/model.pt"))

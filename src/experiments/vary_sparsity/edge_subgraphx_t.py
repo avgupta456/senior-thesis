@@ -1,11 +1,11 @@
 import torch
 
 from src.dataset import dataset, device, test_data
-from src.pred import Net
 from src.experiments.vary_sparsity.base import (
     run_experiment,
     sample_edge_subgraphx as _sample_edge_subgraphx,
 )
+from src.pred import Net
 
 
 def sample_edge_subgraph(T):

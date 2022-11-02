@@ -1,10 +1,10 @@
 import torch
 
 from src.dataset import dataset, device, test_data
+from src.explainers.edge_subgraphx import EdgeSubgraphX
 from src.explainers.gnnexplainer import GNNExplainer
 from src.explainers.random import RandomExplainer
 from src.explainers.subgraphx import SubgraphX
-from src.explainers.edge_subgraphx import EdgeSubgraphX
 from src.pred import Net
 from src.utils import get_neighbors
 
