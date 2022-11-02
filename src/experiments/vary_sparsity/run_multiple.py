@@ -1,0 +1,81 @@
+from collections import defaultdict
+import json
+
+import torch
+import matplotlib.pyplot as plt
+
+
+def get_data():
+    from src.dataset import dataset, device, test_data
+    from src.pred import Net
+    from src.experiments.vary_sparsity.base import (
+        run_experiment,
+        sample_gnnexplainer,
+        sample_subgraphx,
+        sample_edge_subgraphx,
+        sample_random,
+    )
+
+    model = Net(dataset.num_features, 128, 32).to(device)
+    model.load_state_dict(torch.load("./models/model.pt"))
+    all_data = run_experiment(
+        model,
+        test_data.x,
+        test_data.edge_index,
+        test_data.edge_label_index[:, :50],
+        [sample_gnnexplainer, sample_subgraphx, sample_edge_subgraphx, sample_random],
+        ["GNNExplainer", "SubgraphX", "EdgeSubgraphX", "Random"],
+    )
+    return all_data
+
+
+def plot_data(all_data):
+    sampler_names = ["GNNExplainer", "SubgraphX", "EdgeSubgraphX", "Random"]
+
+    count = 0
+    x_samples = 1000
+    merged_necessary_results = defaultdict(lambda: [0 for _ in range(x_samples)])
+    merged_sufficient_results = defaultdict(lambda: [0 for _ in range(x_samples)])
+    merged_results = defaultdict(lambda: [0 for _ in range(x_samples)])
+    for i, data in all_data.items():
+        n = len(data["sufficient"][sampler_names[0]])
+        if data["sufficient"]["Random"][0] > 0.5:
+            continue
+        count += 1
+        for name in sampler_names:
+            for j in range(x_samples):
+                best_x = int(j / x_samples * n)
+                merged_sufficient_results[name][j] += data["sufficient"][name][best_x]
+                merged_necessary_results[name][j] += data["necessary"][name][best_x]
+                merged_results[name][j] += data["characterization"][name][best_x]
+
+    cutoff = int(0.8 * x_samples)
+    for result, result_label in zip(
+        [merged_sufficient_results, merged_necessary_results, merged_results],
+        ["(1 - Fidelity-)", "Fidelity+", "Characterization"],
+    ):
+        fig, ax = plt.subplots()
+        for sampler_name in sampler_names:
+            ax.plot(
+                [x / x_samples for x in range(cutoff)],
+                [x / count for x in result[sampler_name][:cutoff]],
+                label=sampler_name,
+            )
+        ax.set_xlabel("Sparsity")
+        ax.set_ylabel(result_label)
+        ax.set_title(f"{result_label} vs Sparsity (n={count})")
+        ax.legend()
+        plt.show()
+
+
+if __name__ == "__main__":
+    create_data = False
+
+    if create_data:
+        all_data = get_data()
+        with open("./results/vary_sparsity/data.json", "w") as f:
+            json.dump(all_data, f)
+    else:
+        with open("./results/vary_sparsity/data_50.json", "r") as f:
+            all_data = json.load(f)
+        plot_data(all_data)
