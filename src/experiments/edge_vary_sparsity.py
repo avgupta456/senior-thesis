@@ -10,7 +10,7 @@ from src.explainers.subgraphx import SubgraphX
 from src.explainers.edge_subgraphx import EdgeSubgraphX
 from src.explainers.gnnexplainer import GNNExplainer
 from src.pred import Net
-from src.utils import get_neighbors, mask_nodes, sigmoid
+from src.utils import get_neighbors, sigmoid
 from src.metrics.fidelity import fid_plus_prob, fid_minus_prob, charact_prob
 
 
@@ -40,7 +40,7 @@ def sample_random(model, x, edge_index, node_idx_1, node_idx_2):
 if __name__ == "__main__":
     # Load the dataset and model
     x, edge_index = test_data.x, test_data.edge_index
-    index = 10
+    index = 12
     node_idx_1 = test_data.edge_label_index[0, index].item()  # 24
     node_idx_2 = test_data.edge_label_index[1, index].item()  # 187
 
@@ -75,6 +75,11 @@ if __name__ == "__main__":
     sufficient_results = defaultdict(list)
     necessary_results = defaultdict(list)
     results = defaultdict(list)
+
+    edge_mask_1 = edge_index[1] == edge_label_index[0]
+    edge_mask_2 = edge_index[1] == edge_label_index[1]
+    sub_edge_mask = edge_mask_1 | edge_mask_2
+
     for k in range(neighbors.shape[0] + 1):
         for label, output in zip(
             ["gnnexplainer", "subgraphx", "edge_subgraphx", "random"],
@@ -85,26 +90,21 @@ if __name__ == "__main__":
                 random_output,
             ],
         ):
-            keep_nodes = [x for x, _ in output[:k]]
+            keep_edges = torch.isin(edge_index[0], torch.tensor(output[:k]))
 
-            S_filter = np.ones(x.shape[0], dtype=bool)
-            S_filter[neighbors] = 0
-            S_filter[keep_nodes] = 1
+            S_filter = np.ones(edge_index.shape[1], dtype=bool)
+            S_filter[sub_edge_mask] = 0
+            S_filter[sub_edge_mask & keep_edges] = 1
 
-            # Include this line to remove the features of the edge nodes
-            # S_filter[[node_idx_1, node_idx_2]] = 0
-
-            temp_x = mask_nodes(x, S_filter)
-            expl_pred = model(temp_x, edge_index, edge_label_index)[1]
+            expl_pred = model(x, edge_index[:, S_filter], edge_label_index)[1]
             fid_minus = fid_minus_prob(sigmoid(initial_pred), sigmoid(expl_pred))
             sufficient_results[label].append(1 - fid_minus.item())
 
-            S_filter = np.ones(x.shape[0], dtype=bool)
-            S_filter[neighbors] = 1
-            S_filter[keep_nodes] = 0
+            S_filter = np.ones(edge_index.shape[1], dtype=bool)
+            S_filter[sub_edge_mask] = 1
+            S_filter[sub_edge_mask & keep_edges] = 0
 
-            temp_x = mask_nodes(x, S_filter)
-            remove_pred = model(temp_x, edge_index, edge_label_index)[1]
+            remove_pred = model(x, edge_index[:, S_filter], edge_label_index)[1]
             fid_plus = fid_plus_prob(sigmoid(initial_pred), sigmoid(remove_pred))
             necessary_results[label].append(fid_plus.item())
 
