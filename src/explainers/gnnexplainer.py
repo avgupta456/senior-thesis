@@ -78,7 +78,7 @@ class _GNNExplainer(PyG_GNNExplainer):
         set_masks(self.model, self.edge_mask, edge_index, apply_sigmoid=True)
         optimizer = torch.optim.Adam([self.edge_mask], lr=self.lr)
 
-        for epoch in range(1, self.epochs + 1):
+        for _ in range(self.epochs):
             optimizer.zero_grad()
             out = self.model(
                 x=x, edge_index=edge_index, edge_label_index=edge_label_index
