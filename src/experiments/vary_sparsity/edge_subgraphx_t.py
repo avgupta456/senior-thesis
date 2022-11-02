@@ -25,4 +25,5 @@ if __name__ == "__main__":
         test_data.edge_label_index[:, 10:11],
         [sample_edge_subgraph(T) for T in [2, 5, 10, 20]],
         ["EdgeSubgraphX T={}".format(T) for T in [2, 5, 10, 20]],
+        show_plots=True,
     )

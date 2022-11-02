@@ -39,7 +39,10 @@ def sample_random(model, x, edge_index, node_idx_1, node_idx_2):
     return random_explainer.explain_edge(node_idx_1, node_idx_2)
 
 
-def run_experiment(model, x, edge_index, edge_label_index, samplers, sampler_names):
+def run_experiment(
+    model, x, edge_index, edge_label_index, samplers, sampler_names, show_plots=False
+):
+    all_results = {}
     for i in range(edge_label_index.shape[1]):
         node_idx_1 = edge_label_index[0, i].item()
         node_idx_2 = edge_label_index[1, i].item()
@@ -87,18 +90,27 @@ def run_experiment(model, x, edge_index, edge_label_index, samplers, sampler_nam
                 )
                 results[sampler_name].append(charact.item())
 
-        for result, result_label in zip(
-            [sufficient_results, necessary_results, results],
-            ["Sufficient", "Necessary", "Characterization"],
-        ):
-            fig, ax = plt.subplots()
-            for sampler_name in sampler_names:
-                ax.plot(result[sampler_name], label=sampler_name)
-            ax.set_xlabel("Number of nodes")
-            ax.set_ylabel("Prediction")
-            ax.set_title(f"{result_label} vs Sparsity")
-            ax.legend()
-            plt.show()
+        if show_plots:
+            for result, result_label in zip(
+                [sufficient_results, necessary_results, results],
+                ["Sufficient", "Necessary", "Characterization"],
+            ):
+                fig, ax = plt.subplots()
+                for sampler_name in sampler_names:
+                    ax.plot(result[sampler_name], label=sampler_name)
+                ax.set_xlabel("Number of nodes")
+                ax.set_ylabel("Prediction")
+                ax.set_title(f"{result_label} vs Sparsity")
+                ax.legend()
+                plt.show()
+
+        all_results[i] = {
+            "sufficient": sufficient_results,
+            "necessary": necessary_results,
+            "characterization": results,
+        }
+
+    return all_results
 
 
 if __name__ == "__main__":
