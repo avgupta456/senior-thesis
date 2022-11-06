@@ -11,6 +11,8 @@ def get_data():
         run_experiment,
         sample_edge_subgraphx,
         sample_gnnexplainer,
+        sample_embedding,
+        sample_degree,
         sample_random,
         sample_subgraphx,
     )
@@ -23,14 +25,28 @@ def get_data():
         test_data.x,
         test_data.edge_index,
         test_data.edge_label_index[:, :50],
-        [sample_gnnexplainer, sample_subgraphx, sample_edge_subgraphx, sample_random],
-        ["GNNExplainer", "SubgraphX", "EdgeSubgraphX", "Random"],
+        [
+            sample_gnnexplainer,
+            sample_subgraphx,
+            sample_edge_subgraphx,
+            sample_embedding,
+            sample_degree,
+            sample_random,
+        ],
+        ["GNNExplainer", "SubgraphX", "EdgeSubgraphX", "Embedding", "Degree", "Random"],
     )
     return all_data
 
 
 def plot_data(all_data):
-    sampler_names = ["GNNExplainer", "SubgraphX", "EdgeSubgraphX", "Random"]
+    sampler_names = [
+        "GNNExplainer",
+        "SubgraphX",
+        "EdgeSubgraphX",
+        "Embedding",
+        "Degree",
+        "Random",
+    ]
 
     count = 0
     x_samples = 1000
@@ -81,6 +97,6 @@ if __name__ == "__main__":
         with open("./results/vary_sparsity/data.json", "w") as f:
             json.dump(all_data, f)
     else:
-        with open("./results/vary_sparsity/data_50.json", "r") as f:
+        with open("./results/vary_sparsity/data.json", "r") as f:
             all_data = json.load(f)
         plot_data(all_data)
