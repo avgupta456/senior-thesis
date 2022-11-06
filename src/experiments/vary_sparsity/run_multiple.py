@@ -9,10 +9,10 @@ def get_data():
     from src.dataset import dataset, device, test_data
     from src.experiments.vary_sparsity.base import (
         run_experiment,
-        sample_edge_subgraphx,
-        sample_gnnexplainer,
-        sample_embedding,
         sample_degree,
+        sample_edge_subgraphx,
+        sample_embedding,
+        sample_gnnexplainer,
         sample_random,
         sample_subgraphx,
     )

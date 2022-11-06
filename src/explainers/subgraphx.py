@@ -1,8 +1,8 @@
 import statistics
 
 import numpy as np
-from torch_geometric.utils import get_num_hops
 from torch_geometric.data import Data, DataLoader
+from torch_geometric.utils import get_num_hops
 
 from src.explainers.explainer import Explainer
 from src.utils import edge_centered_subgraph, get_neighbors, mask_nodes, sigmoid
