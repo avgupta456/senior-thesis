@@ -9,6 +9,8 @@ from src.explainers.edge_subgraphx import EdgeSubgraphX
 from src.explainers.gnnexplainer import GNNExplainer
 from src.explainers.random import RandomExplainer
 from src.explainers.subgraphx import SubgraphX
+from src.explainers.degree import DegreeExplainer
+from src.explainers.embedding import EmbeddingExplainer
 from src.metrics.fidelity import charact_prob, fid_minus_prob, fid_plus_prob
 from src.pred import Net
 from src.utils import get_neighbors, sigmoid
@@ -32,6 +34,16 @@ def sample_edge_subgraphx(model, x, edge_index, node_idx_1, node_idx_2, T=5):
     # EdgeSubgraphX, 5 * size(neighborhood) queries per explanation
     edge_subgraphx = EdgeSubgraphX(model, x, edge_index, T=T)
     return edge_subgraphx.explain_edge(node_idx_1, node_idx_2)
+
+
+def sample_embedding(model, x, edge_index, node_idx_1, node_idx_2):
+    embedding_explainer = EmbeddingExplainer(model, x, edge_index)
+    return embedding_explainer.explain_edge(node_idx_1, node_idx_2)
+
+
+def sample_degree(model, x, edge_index, node_idx_1, node_idx_2):
+    degree_explainer = DegreeExplainer(model, x, edge_index)
+    return degree_explainer.explain_edge(node_idx_1, node_idx_2)
 
 
 def sample_random(model, x, edge_index, node_idx_1, node_idx_2):
@@ -120,7 +132,15 @@ if __name__ == "__main__":
         model,
         test_data.x,
         test_data.edge_index,
-        test_data.edge_label_index[:, 10:11],
-        [sample_gnnexplainer, sample_subgraphx, sample_edge_subgraphx, sample_random],
-        ["GNNExplainer", "SubgraphX", "EdgeSubgraphX", "Random"],
+        test_data.edge_label_index[:, 23:24],
+        [
+            sample_gnnexplainer,
+            sample_subgraphx,
+            sample_edge_subgraphx,
+            sample_embedding,
+            sample_degree,
+            sample_random,
+        ],
+        ["GNNExplainer", "SubgraphX", "EdgeSubgraphX", "Embedding", "Degree", "Random"],
+        show_plots=True,
     )

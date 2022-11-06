@@ -48,14 +48,14 @@ def edge_centered_subgraph(node_idx_1, node_idx_2, x, edge_index, num_hops):
     return x, edge_index, mapping, subset, edge_mask
 
 
+def get_neighbors_single_node(edge_index, node_idx: int) -> ndarray:
+    return edge_index[:, (edge_index[0] == node_idx)][1].cpu().numpy()
+
+
 def get_neighbors(edge_index, node_idx_1: int, node_idx_2: int) -> ndarray:
-    node_1_neighbors = set(
-        edge_index[:, (edge_index[0] == node_idx_1)][1].cpu().numpy()
-    )
-    node_2_neighbors = set(
-        edge_index[:, (edge_index[0] == node_idx_2)][1].cpu().numpy()
-    )
-    neighbors = np.array(list(node_1_neighbors.union(node_2_neighbors)))
+    node_1_neighbors = edge_index[:, (edge_index[0] == node_idx_1)][1].cpu().numpy()
+    node_2_neighbors = edge_index[:, (edge_index[0] == node_idx_2)][1].cpu().numpy()
+    neighbors = np.array(list(set(node_1_neighbors).union(set(node_2_neighbors))))
     return neighbors
 
 

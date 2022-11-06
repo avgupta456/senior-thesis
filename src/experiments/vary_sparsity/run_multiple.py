@@ -39,8 +39,13 @@ def plot_data(all_data):
     merged_results = defaultdict(lambda: [0 for _ in range(x_samples)])
     for i, data in all_data.items():
         n = len(data["sufficient"][sampler_names[0]])
+        # Filters out examples where the two nodes individually predict an edge
         if data["sufficient"]["Random"][0] > 0.5:
             continue
+        # Or where there are fewer than 10 neighbors
+        if n < 10:
+            continue
+
         count += 1
         for name in sampler_names:
             for j in range(x_samples):
