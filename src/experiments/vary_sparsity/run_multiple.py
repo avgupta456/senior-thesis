@@ -24,7 +24,7 @@ def get_data():
         model,
         test_data.x,
         test_data.edge_index,
-        test_data.edge_label_index[:, :50],
+        test_data.edge_label_index[:, 50:200],
         [
             sample_gnnexplainer,
             sample_subgraphx,
@@ -90,7 +90,7 @@ def plot_data(all_data):
 
 
 if __name__ == "__main__":
-    create_data = False
+    create_data = True
 
     if create_data:
         all_data = get_data()

@@ -132,7 +132,7 @@ if __name__ == "__main__":
         model,
         test_data.x,
         test_data.edge_index,
-        test_data.edge_label_index[:, 23:24],
+        test_data.edge_label_index[:, 12:13],
         [
             sample_gnnexplainer,
             sample_subgraphx,
