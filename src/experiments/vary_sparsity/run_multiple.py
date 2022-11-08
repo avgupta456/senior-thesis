@@ -24,7 +24,7 @@ def get_data():
         model,
         test_data.x,
         test_data.edge_index,
-        test_data.edge_label_index[:, 50:200],
+        test_data.edge_label_index[:, 400:600],
         [
             sample_gnnexplainer,
             sample_subgraphx,
@@ -97,6 +97,6 @@ if __name__ == "__main__":
         with open("./results/vary_sparsity/data.json", "w") as f:
             json.dump(all_data, f)
     else:
-        with open("./results/vary_sparsity/data.json", "r") as f:
+        with open("./results/vary_sparsity/data_400.json", "r") as f:
             all_data = json.load(f)
         plot_data(all_data)

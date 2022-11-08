@@ -16,7 +16,7 @@ class EmbeddingExplainer(Explainer):
         x, edge_index = self.x, self.edge_index
 
         neighbors_1 = get_neighbors_single_node(edge_index, node_idx_1)
-        if len(neighbors_1) > 0:
+        if len(neighbors_1) > 1:
             label_index = torch.tensor([[node_idx_2 for _ in neighbors_1], neighbors_1])
             label_index = label_index.to(x.device)
             node_idx_1_sim = self.pred_model(x, edge_index, label_index)[1]
@@ -24,7 +24,7 @@ class EmbeddingExplainer(Explainer):
             node_idx_1_sim = torch.zeros(1)
 
         neighbors_2 = get_neighbors_single_node(edge_index, node_idx_2)
-        if len(neighbors_2) > 0:
+        if len(neighbors_2) > 1:
             label_index = torch.tensor([[node_idx_1 for _ in neighbors_2], neighbors_2])
             label_index = label_index.to(x.device)
             node_idx_2_sim = self.pred_model(x, edge_index, label_index)[1]
