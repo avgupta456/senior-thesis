@@ -15,7 +15,7 @@ class SubgraphX(Explainer):
         self.num_hops = get_num_hops(pred_model)
         self.T = T
 
-    def explain_edge(self, node_idx_1, node_idx_2):
+    def explain_edge(self, node_idx_1, node_idx_2, target):
         # Only operate on a k-hop subgraph around `node_idx_1` and `node_idx_2.
         (x, edge_index, mapping, subset, _) = edge_centered_subgraph(
             node_idx_1, node_idx_2, self.x, self.edge_index, self.num_hops
@@ -52,13 +52,16 @@ class SubgraphX(Explainer):
             pred = pred.squeeze().cpu().detach().tolist()
             preds.extend(pred)
 
+        # maximize logit diff for positive edge (target=1), minimize otherwise
+        mult = 1 if target == 1 else -1
+
         output = {}
         for i, neighbor in enumerate(neighbors):
             _preds = preds[2 * self.T * i : 2 * self.T * (i + 1)]
             pred_diffs = [_preds[2 * j + 1] - _preds[2 * j] for j in range(self.T)]
             diff_avg = sum(pred_diffs) / len(pred_diffs)
             diff_std = statistics.stdev(pred_diffs) / np.sqrt(self.T)
-            logit = diff_avg / diff_std / 10
+            logit = mult * diff_avg / diff_std / 10
             output[subset[neighbor].item()] = sigmoid(logit)
 
         return output

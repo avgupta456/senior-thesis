@@ -23,6 +23,7 @@ if __name__ == "__main__":
         test_data.x,
         test_data.edge_index,
         test_data.edge_label_index[:, 10:11],
+        test_data.edge_label[10:11],
         [sample_gnnexplainer(epochs) for epochs in [20, 50, 100, 200]],
         ["GNNExplainer epochs={}".format(epochs) for epochs in [20, 50, 100, 200]],
         show_plots=True,

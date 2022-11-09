@@ -46,7 +46,7 @@ class _GNNExplainer(PyG_GNNExplainer):
 
         return loss
 
-    def explain_edge(self, node_idx_1, node_idx_2, x, edge_index):
+    def explain_edge(self, node_idx_1, node_idx_2, target, x, edge_index):
         self.model.eval()
         self._clear_masks()
 
@@ -67,11 +67,6 @@ class _GNNExplainer(PyG_GNNExplainer):
         )
         edge_label_index = mapping.unsqueeze(1)
 
-        # Get the initial prediction
-        prediction = self.get_initial_prediction(
-            x, edge_index, edge_label_index=edge_label_index
-        )
-
         self._initialize_masks(x, edge_index, self.sub_edge_mask)
         self.to(x.device)
 
@@ -83,7 +78,7 @@ class _GNNExplainer(PyG_GNNExplainer):
             out = self.model(
                 x=x, edge_index=edge_index, edge_label_index=edge_label_index
             )
-            loss = self.get_loss(out, prediction, mapping).mean()
+            loss = self.get_loss(out, target, mapping).mean()
             loss.backward()
             optimizer.step()
 
@@ -100,9 +95,9 @@ class GNNExplainer(Explainer):
         super().__init__(pred_model, x, edge_index)
         self.explainer = _GNNExplainer(pred_model, epochs=epochs, lr=lr)
 
-    def explain_edge(self, node_idx_1, node_idx_2):
+    def explain_edge(self, node_idx_1, node_idx_2, target):
         edge_mask = self.explainer.explain_edge(
-            node_idx_1, node_idx_2, self.x, self.edge_index
+            node_idx_1, node_idx_2, target, self.x, self.edge_index
         )
 
         output = {}

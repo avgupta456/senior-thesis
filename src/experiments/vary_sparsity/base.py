@@ -18,21 +18,29 @@ from src.utils import get_neighbors
 
 
 def run_experiment(
-    model, x, edge_index, edge_label_index, samplers, sampler_names, show_plots=False
+    model,
+    x,
+    edge_index,
+    edge_label_index,
+    edge_label,
+    samplers,
+    sampler_names,
+    show_plots=False,
 ):
     all_results = {}
     for i in range(edge_label_index.shape[1]):
         node_idx_1 = edge_label_index[0, i].item()
         node_idx_2 = edge_label_index[1, i].item()
+        target = int(edge_label[i].item())  # 0 for negative, 1 for positive
         n_neighbors = get_neighbors(edge_index, node_idx_1, node_idx_2).shape[0]
-        print(i, node_idx_1, node_idx_2, n_neighbors)
+        print(i, node_idx_1, node_idx_2, target, n_neighbors)
 
         _label_index = torch.tensor([[node_idx_1], [node_idx_2]]).to(device)
         initial_pred = model(x, edge_index, _label_index)[1]
 
         sampler_outputs = []
         for sampler, sampler_name in zip(samplers, sampler_names):
-            output = sampler(model, x, edge_index, node_idx_1, node_idx_2)
+            output = sampler(model, x, edge_index, node_idx_1, node_idx_2, target)
             output = sorted(output.items(), key=lambda x: -x[1])
             sampler_outputs.append(output)
 
@@ -82,13 +90,16 @@ def run_experiment(
 
 
 if __name__ == "__main__":
+    index = 300
+
     model = Net(dataset.num_features, 128, 32).to(device)
     model.load_state_dict(torch.load("./models/model.pt"))
     run_experiment(
         model,
         test_data.x,
         test_data.edge_index,
-        test_data.edge_label_index[:, 12:13],
+        test_data.edge_label_index[:, index : index + 1],
+        test_data.edge_label[index : index + 1],
         [
             sample_gnnexplainer,
             sample_subgraphx,
@@ -97,6 +108,13 @@ if __name__ == "__main__":
             sample_degree,
             sample_random,
         ],
-        ["GNNExplainer", "SubgraphX", "EdgeSubgraphX", "Embedding", "Degree", "Random"],
+        [
+            "GNNExplainer",
+            "SubgraphX",
+            "EdgeSubgraphX",
+            "Embedding",
+            "Degree",
+            "Random",
+        ],
         show_plots=True,
     )

@@ -4,5 +4,5 @@ class Explainer:
         self.x = x
         self.edge_index = edge_index
 
-    def explain_edge(self, node_idx_1, node_idx_2):
+    def explain_edge(self, node_idx_1, node_idx_2, target):
         raise NotImplementedError

@@ -23,6 +23,7 @@ def get_data(start, stop):
         test_data.x,
         test_data.edge_index,
         test_data.edge_label_index[:, start : stop + 1],
+        test_data.edge_label[start : stop + 1],
         [
             sample_gnnexplainer,
             sample_subgraphx,

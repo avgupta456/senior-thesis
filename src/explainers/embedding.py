@@ -11,7 +11,7 @@ class EmbeddingExplainer(Explainer):
 
         self.num_hops = get_num_hops(pred_model)
 
-    def explain_edge(self, node_idx_1, node_idx_2):
+    def explain_edge(self, node_idx_1, node_idx_2, target):
         # TODO: Can use k_hop_subgraph here, not urgent
         x, edge_index = self.x, self.edge_index
 
@@ -31,11 +31,14 @@ class EmbeddingExplainer(Explainer):
         else:
             node_idx_2_sim = torch.zeros(1)
 
+        # maximize embedding similarity for positive edge (target=1), minimize otherwise
+        mult = 1 if target == 1 else -1
+
         output = {}
         for i, neighbor in enumerate(neighbors_1):
-            output[neighbor] = sigmoid(node_idx_1_sim[i])
+            output[neighbor] = sigmoid(mult * node_idx_1_sim[i])
         for i, neighbor in enumerate(neighbors_2):
-            new = sigmoid(node_idx_2_sim[i])
+            new = sigmoid(mult * node_idx_2_sim[i])
             if neighbor in output:
                 old = output[neighbor]
                 output[neighbor] = max(old, new)
