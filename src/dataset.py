@@ -1,7 +1,10 @@
+import random
+
 import torch
 import torch_geometric.transforms as T
 from torch_geometric.datasets import SNAPDataset
 
+random.seed(0)
 torch.manual_seed(0)
 
 # Load the dataset
