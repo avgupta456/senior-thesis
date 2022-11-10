@@ -46,7 +46,7 @@ def _visualize_subgraph(node_idx_1, node_idx_2, x, edge_index, edge_mask):
             textcoords="data",
             arrowprops=dict(
                 arrowstyle="->",
-                alpha=max(data["att"], 0.05),
+                alpha=max(data["att"], 0.02),
                 color=data["edge_color"],
                 shrinkA=sqrt(node_kwargs["node_size"]) / 2.0,
                 shrinkB=sqrt(node_kwargs["node_size"]) / 2.0,
@@ -63,19 +63,22 @@ def _visualize_subgraph(node_idx_1, node_idx_2, x, edge_index, edge_mask):
 
 
 if __name__ == "__main__":
+    index = 164
+
     model = Net(dataset.num_features, 128, 32).to(device)
     model.load_state_dict(torch.load("./models/model.pt"))
 
     x = test_data.x
     edge_index = test_data.edge_index
-    edge_label_index = test_data.edge_label_index[:, 163:164]
+    edge_label_index = test_data.edge_label_index[:, index : index + 1]
+    edge_label = test_data.edge_label[index : index + 1].item()
     y = test_data.y
     node_idx_1 = edge_label_index[0][0].item()
     node_idx_2 = edge_label_index[1][0].item()
 
     print(node_idx_1, node_idx_2)
 
-    output = sample_edge_subgraphx(model, x, edge_index, node_idx_1, node_idx_2)
+    output = sample_embedding(model, x, edge_index, node_idx_1, node_idx_2, edge_label)
 
     # add the edge between the two nodes
     edge_index = torch.cat([edge_index, edge_label_index], dim=1)
@@ -83,7 +86,8 @@ if __name__ == "__main__":
     sub_edge_mask = (edge_index[0] == node_idx_1) | (edge_index[0] == node_idx_2)
     for neighbor, edge_weight in output.items():
         temp_edge_mask = sub_edge_mask & (edge_index[1] == neighbor)
-        edge_mask[temp_edge_mask] = edge_weight
+        # Apply **4 to make the edge weights more visible
+        edge_mask[temp_edge_mask] = edge_weight**4
     # add the edge between the two nodes
     edge_mask[edge_index.shape[1] - 1] = 1
 
