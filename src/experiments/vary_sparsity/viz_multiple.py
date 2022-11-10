@@ -10,9 +10,8 @@ from src.utils import sigmoid
 def filter_data(all_data, filter=None):
     filtered_data = {}
     for i, data in all_data.items():
-        # Only handles positive edge explanations currently
-        # 270-540 are negative edge labels
-        if int(i) > 270:
+        # Only handles positive edge explanations currently, > 285 --> negative
+        if int(i) > 285:
             continue
 
         n = len(data["Random"])
@@ -40,10 +39,10 @@ def filter_data(all_data, filter=None):
 def plot_data(filtered_data):
     sampler_names = [
         "GNNExplainer",
-        "SubgraphX",
+        # "SubgraphX",
         "EdgeSubgraphX",
         "Embedding",
-        "Degree",
+        # "Degree",
         "Random",
     ]
 
@@ -109,5 +108,5 @@ def plot_data(filtered_data):
 if __name__ == "__main__":
     with open("./results/vary_sparsity/data_600.json", "r") as f:
         all_data = json.load(f)
-    filtered_data = filter_data(all_data, filter="large")
+    filtered_data = filter_data(all_data, filter=None)
     plot_data(filtered_data)

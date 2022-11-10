@@ -5,7 +5,7 @@ import numpy as np
 import torch
 
 from src.dataset import dataset, device, test_data
-from src.explainers.main import (
+from src.explainers.main import (  # noqa: F401
     sample_degree,
     sample_edge_subgraphx,
     sample_embedding,
@@ -14,7 +14,7 @@ from src.explainers.main import (
     sample_subgraphx,
 )
 from src.pred import Net
-from src.utils import get_neighbors
+from src.utils import get_neighbors, sigmoid
 
 
 def run_experiment(
@@ -29,6 +29,7 @@ def run_experiment(
 ):
     all_results = {}
     for i in range(edge_label_index.shape[1]):
+        # TODO: Can use k_hop_subgraph here, not urgent
         node_idx_1 = edge_label_index[0, i].item()
         node_idx_2 = edge_label_index[1, i].item()
         target = int(edge_label[i].item())  # 0 for negative, 1 for positive
@@ -76,9 +77,21 @@ def run_experiment(
         all_results[i] = results
 
         if show_plots:
+            # Logits
             fig, ax = plt.subplots()
             for sampler_name in sampler_names:
                 temp_data = [x[2] for x in results[sampler_name]]
+                ax.plot(temp_data, label=sampler_name)
+            ax.set_xlabel("Number of nodes")
+            ax.set_ylabel("Prediction")
+            ax.set_title("Explanation Prediction vs Sparsity")
+            ax.legend()
+            plt.show()
+
+            # Probabilities
+            fig, ax = plt.subplots()
+            for sampler_name in sampler_names:
+                temp_data = [sigmoid(x[2]) for x in results[sampler_name]]
                 ax.plot(temp_data, label=sampler_name)
             ax.set_xlabel("Number of nodes")
             ax.set_ylabel("Prediction")
@@ -90,7 +103,7 @@ def run_experiment(
 
 
 if __name__ == "__main__":
-    index = 300
+    index = 2
 
     model = Net(dataset.num_features, 128, 32).to(device)
     model.load_state_dict(torch.load("./models/model.pt"))
@@ -102,18 +115,18 @@ if __name__ == "__main__":
         test_data.edge_label[index : index + 1],
         [
             sample_gnnexplainer,
-            sample_subgraphx,
+            # sample_subgraphx,
             sample_edge_subgraphx,
             sample_embedding,
-            sample_degree,
+            # sample_degree,
             sample_random,
         ],
         [
             "GNNExplainer",
-            "SubgraphX",
+            # "SubgraphX",
             "EdgeSubgraphX",
             "Embedding",
-            "Degree",
+            # "Degree",
             "Random",
         ],
         show_plots=True,

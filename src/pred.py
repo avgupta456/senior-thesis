@@ -23,7 +23,8 @@ class SimpleNet(torch.nn.Module):
         return self.conv2(x, edge_index)
 
     def decode(self, z, edge_label_index):
-        return (z[edge_label_index[0]] * z[edge_label_index[1]]).sum(dim=-1)
+        out = (z[edge_label_index[0]] * z[edge_label_index[1]]).sum(dim=-1)
+        return out.unsqueeze(-1)
 
     def forward(self, x, edge_index, edge_label_index, data=None):
         z = self.encode(x, edge_index)
