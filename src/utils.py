@@ -1,3 +1,5 @@
+import random
+
 import numpy as np
 import torch
 from numpy import ndarray
@@ -5,6 +7,9 @@ from torch_geometric.utils import k_hop_subgraph
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+random.seed(0)
+torch.manual_seed(0)
 
 
 def sigmoid(x):

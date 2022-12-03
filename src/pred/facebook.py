@@ -1,5 +1,3 @@
-import random
-
 import torch
 from torch.nn import BCEWithLogitsLoss
 from torch.optim import Adam
@@ -23,8 +21,5 @@ def train_model(epochs):
 
 
 if __name__ == "__main__":
-    random.seed(0)
-    torch.manual_seed(0)
-
     epochs = 1000
     train_model(epochs)
