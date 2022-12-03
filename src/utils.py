@@ -4,6 +4,9 @@ from numpy import ndarray
 from torch_geometric.utils import k_hop_subgraph
 
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+
 def sigmoid(x):
     if isinstance(x, torch.Tensor):
         return torch.sigmoid(x)
