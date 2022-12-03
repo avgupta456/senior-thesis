@@ -1,8 +1,8 @@
 class Explainer:
-    def __init__(self, pred_model, x, edge_index):
+    def __init__(self, pred_model):
         self.pred_model = pred_model
-        self.x = x
-        self.edge_index = edge_index
 
-    def explain_edge(self, node_idx_1, node_idx_2, target):
+    def explain_edge(
+        self, data, node_idx_1, node_1_type, node_idx_2, node_2_type, target
+    ):
         raise NotImplementedError

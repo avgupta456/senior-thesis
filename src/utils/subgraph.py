@@ -29,6 +29,37 @@ def mask_edges(edge_index, src_mask, dst_mask):
     return new_edge_index
 
 
+def apply_node_mask(data, node_mask):
+    x_dict = data.x_dict
+    edge_index_dict = data.edge_index_dict
+
+    x_dict = {k: mask_nodes(v, node_mask[k]) for k, v in x_dict.items()}
+    edge_index_dict = {
+        k: mask_edges(v, node_mask[k[0]], node_mask[k[2]])
+        for k, v in edge_index_dict.items()
+    }
+
+    new_data = HeteroData()
+    new_data.x_dict = x_dict
+    new_data.edge_index_dict = edge_index_dict
+    new_data = new_data.to(device)
+
+    return new_data
+
+
+def apply_edge_mask(data, edge_mask):
+    x_dict = data.x_dict
+    edge_index_dict = data.edge_index_dict
+    edge_index_dict = {k: v[:, edge_mask[k]] for k, v in edge_index_dict.items()}
+
+    new_data = HeteroData()
+    new_data.x_dict = x_dict
+    new_data.edge_index_dict = edge_index_dict
+    new_data = new_data.to(device)
+
+    return new_data
+
+
 def edge_centered_subgraph(
     node_idx_1, node_1_type, node_idx_2, node_2_type, data, num_hops
 ):
@@ -65,15 +96,28 @@ def edge_centered_subgraph(
     new_node_idx_1 = x_mask[node_1_type].nonzero().view(-1).tolist().index(node_idx_1)
     new_node_idx_2 = x_mask[node_2_type].nonzero().view(-1).tolist().index(node_idx_2)
 
-    x_dict = {k: mask_nodes(v, x_mask[k]) for k, v in x_dict.items()}
-    edge_index_dict = {
-        k: mask_edges(v, x_mask[k[0]], x_mask[k[2]])
+    return apply_node_mask(data, x_mask), new_node_idx_1, new_node_idx_2
+
+
+def remove_edge_connections(
+    data, node_idx_1, node_1_type, node_idx_2, node_2_type, edges
+):
+    # Ex: edges = [("actor", 2772), ("director", 1331), ...]
+
+    edge_mask = {
+        k: torch.ones(v.size(1), dtype=torch.bool)
         for k, v in data.edge_index_dict.items()
     }
 
-    new_data = HeteroData()
-    new_data.x_dict = x_dict
-    new_data.edge_index_dict = edge_index_dict
-    new_data = new_data.to(device)
+    for node_type, node_idx in edges:
+        for k, v in data.edge_index_dict.items():
+            if k[0] == node_type and k[2] == node_1_type:
+                edge_mask[k][(v[0] == node_idx) & (v[1] == node_idx_1)] = False
+            if k[0] == node_type and k[2] == node_2_type:
+                edge_mask[k][(v[0] == node_idx) & (v[1] == node_idx_2)] = False
+            if k[0] == node_1_type and k[2] == node_type:
+                edge_mask[k][(v[0] == node_idx_1) & (v[1] == node_idx)] = False
+            if k[0] == node_2_type and k[2] == node_type:
+                edge_mask[k][(v[0] == node_idx_2) & (v[1] == node_idx)] = False
 
-    return new_data, new_node_idx_1, new_node_idx_2
+    return apply_edge_mask(data, edge_mask)

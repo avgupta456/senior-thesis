@@ -2,12 +2,10 @@ from collections import defaultdict
 import sys
 
 import matplotlib.pyplot as plt
-import numpy as np
 import torch
 
 from src.datasets.facebook import get_facebook_dataset
 from src.datasets.imdb import get_imdb_dataset
-from src.datasets.dblp import get_dblp_dataset
 from src.explainers.main import (  # noqa: F401
     sample_degree,
     sample_edge_subgraphx,
@@ -18,7 +16,7 @@ from src.explainers.main import (  # noqa: F401
 )
 from src.pred.model import SimpleNet, Net
 from src.utils.utils import device, sigmoid
-from src.utils.subgraph import edge_centered_subgraph
+from src.utils.subgraph import edge_centered_subgraph, remove_edge_connections
 from src.utils.neighbors import get_neighbors
 
 
@@ -33,11 +31,6 @@ def get_dataset_and_model(name):
         model = SimpleNet(128, 32, metadata=train_data.metadata()).to(device)
         model.load_state_dict(torch.load("./models/imdb_model.pt"))
         key = ("movie", "to", "actor")
-    elif name == "dblp":
-        train_data, val_data, test_data = get_dblp_dataset()
-        model = SimpleNet(128, 32, metadata=train_data.metadata()).to(device)
-        model.load_state_dict(torch.load("./models/dblp_model.pt"))
-        key = ("paper", "to", "author")
     else:
         raise ValueError(f"Unknown dataset: {name}")
 
@@ -108,57 +101,59 @@ def run_experiment(
             round(final_pred, 4),
         )
 
-        continue
-
         sampler_outputs = []
         for sampler, sampler_name in zip(samplers, sampler_names):
-            output = sampler(model, x, edge_index, node_idx_1, node_idx_2, target)
+            output = sampler(
+                model, curr_data, node_idx_1, start, node_idx_2, end, target
+            )
             output = sorted(output.items(), key=lambda x: -x[1])
             sampler_outputs.append(output)
-
-        sub_edge_mask = (edge_index[1] == node_idx_1) | (edge_index[1] == node_idx_2)
 
         results = defaultdict(list)
         for k in range(n_neighbors + 1):
             for output, sampler_name in zip(sampler_outputs, sampler_names):
-                keep_edges = torch.isin(edge_index[0], torch.tensor(output[:k]))
+                # Remove edges [k:], leaving [:k]
+                expl_data = remove_edge_connections(
+                    curr_data,
+                    node_idx_1,
+                    start,
+                    node_idx_2,
+                    end,
+                    [x[0] for x in output[k:]],
+                )
 
-                S_filter = np.ones(edge_index.shape[1], dtype=bool)
-                S_filter[sub_edge_mask] = 0
-                S_filter[sub_edge_mask & keep_edges] = 1
+                expl_pred = model(
+                    expl_data.x_dict, expl_data.edge_index_dict, _label_index, key
+                )[1]
 
-                expl_pred = model(x, edge_index[:, S_filter], _label_index)[1]
+                # Remove edges [:k], leaving [k:]
+                remove_data = remove_edge_connections(
+                    curr_data,
+                    node_idx_1,
+                    start,
+                    node_idx_2,
+                    end,
+                    [x[0] for x in output[:k]],
+                )
 
-                S_filter = np.ones(edge_index.shape[1], dtype=bool)
-                S_filter[sub_edge_mask] = 1
-                S_filter[sub_edge_mask & keep_edges] = 0
+                remove_pred = model(
+                    remove_data.x_dict, remove_data.edge_index_dict, _label_index, key
+                )[1]
 
-                remove_pred = model(x, edge_index[:, S_filter], _label_index)[1]
-
-                new_node = None if k == 0 else int(output[k - 1][0])
+                new_node = None if k == 0 else output[k - 1][0]
                 results[sampler_name].append(
                     [
                         new_node,
-                        float(initial_pred.item()),
+                        float(initial_pred),
                         float(expl_pred.item()),
                         float(remove_pred.item()),
+                        float(final_pred),
                     ]
                 )
 
         all_results[i] = results
 
         if show_plots:
-            # Logits
-            fig, ax = plt.subplots()
-            for sampler_name in sampler_names:
-                temp_data = [x[2] for x in results[sampler_name]]
-                ax.plot(temp_data, label=sampler_name)
-            ax.set_xlabel("Number of nodes")
-            ax.set_ylabel("Prediction")
-            ax.set_title("Explanation Prediction vs Sparsity")
-            ax.legend()
-            plt.show()
-
             # Probabilities
             fig, ax = plt.subplots()
             for sampler_name in sampler_names:
@@ -190,19 +185,19 @@ if __name__ == "__main__":
         0,
         test_data.edge_label_index_dict[key].shape[1],
         [
-            sample_gnnexplainer,
-            sample_subgraphx,
-            sample_edge_subgraphx,
-            sample_embedding,
-            sample_degree,
+            # sample_gnnexplainer,
+            # sample_subgraphx,
+            # sample_edge_subgraphx,
+            # sample_embedding,
+            # sample_degree,
             sample_random,
         ],
         [
-            "GNNExplainer",
-            "SubgraphX",
-            "EdgeSubgraphX",
-            "Embedding",
-            "Degree",
+            # "GNNExplainer",
+            # "SubgraphX",
+            # "EdgeSubgraphX",
+            # "Embedding",
+            # "Degree",
             "Random",
         ],
         show_plots=True,

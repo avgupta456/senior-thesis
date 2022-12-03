@@ -21,6 +21,8 @@ def get_facebook_dataset():
     dataset = SNAPDataset(
         root="./data/SNAPDataset", name="ego-facebook", transform=transform
     )
+
+    # TODO: Add other connected components
     train_data, val_data, test_data = dataset[0]
 
     # TRAIN DATA
