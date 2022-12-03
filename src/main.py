@@ -7,7 +7,6 @@ import torch
 from src.datasets.facebook import get_facebook_dataset
 from src.datasets.imdb import get_imdb_dataset
 from src.explainers.main import (  # noqa: F401
-    sample_degree,
     sample_edge_subgraphx,
     sample_embedding,
     sample_gnnexplainer,
@@ -189,7 +188,6 @@ if __name__ == "__main__":
             # sample_subgraphx,
             # sample_edge_subgraphx,
             # sample_embedding,
-            # sample_degree,
             sample_random,
         ],
         [
@@ -197,7 +195,6 @@ if __name__ == "__main__":
             # "SubgraphX",
             # "EdgeSubgraphX",
             # "Embedding",
-            # "Degree",
             "Random",
         ],
         show_plots=True,

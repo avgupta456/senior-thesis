@@ -1,4 +1,3 @@
-from src.explainers.degree import DegreeExplainer
 from src.explainers.edge_subgraphx import EdgeSubgraphX
 from src.explainers.embedding import EmbeddingExplainer
 from src.explainers.gnnexplainer import GNNExplainer
@@ -49,15 +48,6 @@ def sample_embedding(
 ):
     embedding_explainer = EmbeddingExplainer(model)
     return embedding_explainer.explain_edge(
-        data, node_idx_1, node_1_type, node_idx_2, node_2_type, target
-    )
-
-
-def sample_degree(
-    model, data, node_idx_1, node_1_type, node_idx_2, node_2_type, target
-):
-    degree_explainer = DegreeExplainer(model)
-    return degree_explainer.explain_edge(
         data, node_idx_1, node_1_type, node_idx_2, node_2_type, target
     )
 
