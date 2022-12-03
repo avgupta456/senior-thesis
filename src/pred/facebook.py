@@ -4,7 +4,7 @@ from torch.optim import Adam
 
 from src.datasets.facebook import get_facebook_dataset
 from src.pred.model import Net, run
-from src.utils import device
+from src.utils.utils import device
 
 
 def train_model(epochs):

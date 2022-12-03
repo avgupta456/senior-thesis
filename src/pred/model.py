@@ -35,6 +35,11 @@ class SimpleNet(torch.nn.Module):
         x2 = z2[edge_label_index[1]]
         return (x1 * x2).sum(dim=-1)
 
+    def forward(self, x_dict, edge_index_dict, edge_label_index, key):
+        z = self.encode(x_dict, edge_index_dict)
+        out = self.decode(z[key[0]], z[key[2]], edge_label_index)
+        return torch.hstack((-out, out)).T
+
 
 class Net(torch.nn.Module):
     def __init__(self, hidden_channels, out_channels, metadata):
@@ -58,6 +63,11 @@ class Net(torch.nn.Module):
         out2 = self.W2(torch.relu(self.W1(z_rev)).squeeze()).squeeze()
 
         return (out1 + out2) / 2
+
+    def forward(self, x_dict, edge_index_dict, edge_label_index, key):
+        z = self.encode(x_dict, edge_index_dict)
+        out = self.decode(z[key[0]], z[key[2]], edge_label_index)
+        return torch.hstack((-out, out)).T
 
 
 def train(model, optimizer, criterion, data, key):

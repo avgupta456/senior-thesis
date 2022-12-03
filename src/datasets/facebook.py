@@ -1,7 +1,7 @@
 import torch_geometric.transforms as T
 from torch_geometric.datasets import SNAPDataset
 
-from src.utils import device
+from src.utils.utils import device
 
 
 def get_facebook_dataset():
