@@ -8,9 +8,7 @@ class RandomExplainer(Explainer):
     def __init__(self, pred_model):
         super().__init__(pred_model)
 
-    def explain_edge(
-        self, data, node_idx_1, node_1_type, node_idx_2, node_2_type, target
-    ):
+    def explain_edge(self, data, node_idx_1, node_1_type, node_idx_2, node_2_type):
         neighbors = get_neighbors(
             data, node_idx_1, node_1_type, node_idx_2, node_2_type
         )

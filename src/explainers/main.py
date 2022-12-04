@@ -5,46 +5,34 @@ from src.explainers.subgraphx import SubgraphX
 
 
 def sample_gnnexplainer(
-    model,
-    data,
-    node_idx_1,
-    node_1_type,
-    node_idx_2,
-    node_2_type,
-    target,
-    epochs=100,
-    lr=0.01,
+    model, data, node_idx_1, node_1_type, node_idx_2, node_2_type, epochs=50, lr=0.1
 ):
     # GNNExplainer, 100 queries per explanation
     gnnexplainer = GNNExplainer(model, epochs=epochs, lr=lr)
     return gnnexplainer.explain_edge(
-        data, node_idx_1, node_1_type, node_idx_2, node_2_type, target
+        data, node_idx_1, node_1_type, node_idx_2, node_2_type
     )
 
 
 def sample_subgraphx(
-    model, data, node_idx_1, node_1_type, node_idx_2, node_2_type, target, T=5
+    model, data, node_idx_1, node_1_type, node_idx_2, node_2_type, T=5
 ):
     # SubgraphX, 5 * size(neighborhood) queries per explanation
     subgraphx = SubgraphX(model, T=T)
     return subgraphx.explain_edge(
-        data, node_idx_1, node_1_type, node_idx_2, node_2_type, target
+        data, node_idx_1, node_1_type, node_idx_2, node_2_type
     )
 
 
-def sample_embedding(
-    model, data, node_idx_1, node_1_type, node_idx_2, node_2_type, target
-):
+def sample_embedding(model, data, node_idx_1, node_1_type, node_idx_2, node_2_type):
     embedding_explainer = EmbeddingExplainer(model)
     return embedding_explainer.explain_edge(
-        data, node_idx_1, node_1_type, node_idx_2, node_2_type, target
+        data, node_idx_1, node_1_type, node_idx_2, node_2_type
     )
 
 
-def sample_random(
-    model, data, node_idx_1, node_1_type, node_idx_2, node_2_type, target
-):
+def sample_random(model, data, node_idx_1, node_1_type, node_idx_2, node_2_type):
     random_explainer = RandomExplainer(model)
     return random_explainer.explain_edge(
-        data, node_idx_1, node_1_type, node_idx_2, node_2_type, target
+        data, node_idx_1, node_1_type, node_idx_2, node_2_type
     )

@@ -6,7 +6,7 @@ import torch
 
 from src.datasets.facebook import get_facebook_dataset
 from src.datasets.imdb import get_imdb_dataset
-from src.explainers.main import (  # noqa: F401
+from src.explainers.main import (
     sample_embedding,
     sample_gnnexplainer,
     sample_random,
@@ -101,9 +101,7 @@ def run_experiment(
 
         sampler_outputs = []
         for sampler, sampler_name in zip(samplers, sampler_names):
-            output = sampler(
-                model, curr_data, node_idx_1, start, node_idx_2, end, target
-            )
+            output = sampler(model, curr_data, node_idx_1, start, node_idx_2, end)
             output = sorted(output.items(), key=lambda x: -x[1])
             sampler_outputs.append(output)
 
@@ -163,6 +161,16 @@ def run_experiment(
             ax.legend()
             plt.show()
 
+            fig, ax = plt.subplots()
+            for sampler_name in sampler_names:
+                temp_data = [sigmoid(x[3]) for x in results[sampler_name]]
+                ax.plot(temp_data, label=sampler_name)
+            ax.set_xlabel("Number of nodes")
+            ax.set_ylabel("Prediction")
+            ax.set_title("Removal Prediction vs Sparsity")
+            ax.legend()
+            plt.show()
+
     return all_results
 
 
@@ -183,13 +191,13 @@ if __name__ == "__main__":
         0,
         test_data.edge_label_index_dict[key].shape[1],
         [
-            # sample_gnnexplainer,
+            sample_gnnexplainer,
             sample_subgraphx,
             sample_embedding,
             sample_random,
         ],
         [
-            # "GNNExplainer",
+            "GNNExplainer",
             "SubgraphX",
             "Embedding",
             "Random",
