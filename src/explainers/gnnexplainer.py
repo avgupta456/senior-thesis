@@ -1,40 +1,81 @@
-from math import sqrt
-
 import torch
-from torch_geometric.nn import GNNExplainer as PyG_GNNExplainer
-from torch_geometric.nn.models.explainer import set_masks
+
+from torch_geometric.nn import MessagePassing
 
 from src.explainers.explainer import Explainer
-from src.utils import edge_centered_subgraph
 
 EPS = 1e-15
 
 
-class _GNNExplainer(PyG_GNNExplainer):
+def set_masks(model, mask, edge_index, apply_sigmoid=True):
+    loop_mask = edge_index[0] != edge_index[1]
+
+    # Loop over layers and set masks on MessagePassing layers:
+    for module in model.modules():
+        if isinstance(module, MessagePassing):
+            module.explain = True
+            module._edge_mask = mask
+            module._loop_mask = loop_mask
+            module._apply_sigmoid = apply_sigmoid
+
+
+def set_hetero_masks(model, mask_dict, edge_index_dict, apply_sigmoid=True):
+    for module in model.modules():
+        if isinstance(module, torch.nn.ModuleDict):
+            for edge_type in mask_dict.keys():
+                str_edge_type = "__".join(edge_type)
+                if str_edge_type in module:
+                    set_masks(
+                        module[str_edge_type],
+                        mask_dict[edge_type],
+                        edge_index_dict[edge_type],
+                        apply_sigmoid=apply_sigmoid,
+                    )
+
+
+def clear_masks(model: torch.nn.Module):
+    for module in model.modules():
+        if isinstance(module, MessagePassing):
+            module.explain = False
+            module._edge_mask = None
+            module._loop_mask = None
+            module._apply_sigmoid = True
+    return module
+
+
+class _GNNExplainer:
     coeffs = {
-        "edge_size": 0.10,
-        "edge_reduction": "sum",
-        "edge_ent": -1.0,
+        "edge_size": 5.0,
+        "edge_ent": -2.0,
     }
 
-    def _initialize_masks(self, x, edge_index, sub_edge_mask=None):
-        (N, F), E = x.size(), edge_index.size(1)
-        self.node_feat_mask = torch.nn.Parameter(100 * torch.ones(1, F))
+    def __init__(self, model, epochs, lr, **kwargs):
+        self.model = model
+        self.lr = lr
+        self.epochs = epochs
+        self._clear_masks()
 
-        std = torch.nn.init.calculate_gain("relu") * sqrt(2.0 / (2 * N))
-        if sub_edge_mask is None:
-            self.edge_mask = torch.nn.Parameter(torch.randn(E) * std)
-        else:
-            E_1, mask = sub_edge_mask.sum(), 100 * torch.ones(E)
-            mask[sub_edge_mask] = torch.randn(E_1) * std
-            self.edge_mask = torch.nn.Parameter(mask)
+    def _initialize_masks(self, edge_index_dict, sub_edge_mask):
+        self.edge_mask = {}
+        for k, v in edge_index_dict.items():
+            E = v.size(1)
+            E_1, mask = sub_edge_mask[k].sum(), 100 * torch.ones(E)
+            mask[sub_edge_mask[k]] = torch.randn(E_1)
+            self.edge_mask[k] = torch.nn.Parameter(mask)
 
-    def _loss(self, log_logits, prediction, node_idx=None):
-        error_loss = -log_logits[prediction]
+    def _clear_masks(self):
+        clear_masks(self.model)
+        self.edge_mask = None
 
-        m = self.edge_mask[self.sub_edge_mask].sigmoid()
-        edge_reduce = getattr(torch, self.coeffs["edge_reduction"])
-        edge_size_loss = edge_reduce(m)
+    def get_loss(self, out, prediction):
+        error_loss = -out[prediction]
+
+        m = []
+        for k, v in self.edge_mask.items():
+            m.append(v[self.sub_edge_mask[k]])
+        m = torch.cat(m).sigmoid()
+
+        edge_size_loss = torch.mean(m)
         ent = -m * torch.log(m + EPS) - (1 - m) * torch.log(1 - m + EPS)
         edge_ent_loss = ent.mean()
 
@@ -46,67 +87,61 @@ class _GNNExplainer(PyG_GNNExplainer):
 
         return loss
 
-    def explain_edge(self, node_idx_1, node_idx_2, target, x, edge_index):
+    def explain_edge(self, data, node_idx_1, node_1_type, node_idx_2, node_2_type):
         self.model.eval()
         self._clear_masks()
 
-        num_edges = edge_index.size(1)
+        sub_edge_mask = {
+            k: torch.zeros(v.size(1), dtype=torch.bool)
+            for k, v in data.edge_index_dict.items()
+        }
 
-        # Only operate on a k-hop subgraph around `node_idx_1` and `node_idx_2.
-        (
-            x,
-            edge_index,
-            mapping,
-            _,
-            hard_edge_mask,
-        ) = edge_centered_subgraph(node_idx_1, node_idx_2, x, edge_index, self.num_hops)
+        for k, v in data.edge_index_dict.items():
+            if k[2] == node_1_type:
+                sub_edge_mask[k][v[1] == node_idx_1] = True
+            if k[2] == node_2_type:
+                sub_edge_mask[k][v[1] == node_idx_2] = True
 
-        # Only optimizes the edges from neighbors to node_1/node_2, other direction not needed for prediction
-        self.sub_edge_mask = (edge_index[1] == mapping[0]) | (
-            edge_index[1] == mapping[1]
+        self.sub_edge_mask = sub_edge_mask
+
+        self._initialize_masks(data.edge_index_dict, self.sub_edge_mask)
+
+        set_hetero_masks(
+            self.model, self.edge_mask, data.edge_index_dict, apply_sigmoid=True
         )
-        edge_label_index = mapping.unsqueeze(1)
 
-        self._initialize_masks(x, edge_index, self.sub_edge_mask)
-        self.to(x.device)
+        optimizer = torch.optim.Adam(params=self.edge_mask.values(), lr=self.lr)
 
-        set_masks(self.model, self.edge_mask, edge_index, apply_sigmoid=True)
-        optimizer = torch.optim.Adam([self.edge_mask], lr=self.lr)
-
+        edge_label_index = torch.tensor([[node_idx_1], [node_idx_2]])
+        key = (node_1_type, "to", node_2_type)
         for _ in range(self.epochs):
             optimizer.zero_grad()
-            out = self.model(
-                x=x, edge_index=edge_index, edge_label_index=edge_label_index
-            )
-            loss = self.get_loss(out, target, mapping).mean()
+            out = self.model(data.x_dict, data.edge_index_dict, edge_label_index, key)
+            loss = self.get_loss(out, 1).mean()
             loss.backward()
             optimizer.step()
 
-        edge_mask = self.edge_mask.new_zeros(num_edges)
-        edge_mask[hard_edge_mask] = self.edge_mask.detach().sigmoid()
+        out = self.edge_mask, self.sub_edge_mask
 
         self._clear_masks()
 
-        return edge_mask
+        return out
 
 
 class GNNExplainer(Explainer):
-    def __init__(self, pred_model, x, edge_index, epochs=200, lr=1e-2):
-        super().__init__(pred_model, x, edge_index)
+    def __init__(self, pred_model, epochs, lr):
+        super().__init__(pred_model)
         self.explainer = _GNNExplainer(pred_model, epochs=epochs, lr=lr)
 
-    def explain_edge(self, node_idx_1, node_idx_2, target):
-        edge_mask = self.explainer.explain_edge(
-            node_idx_1, node_idx_2, target, self.x, self.edge_index
+    def explain_edge(self, data, node_idx_1, node_1_type, node_idx_2, node_2_type):
+        edge_mask, sub_edge_mask = self.explainer.explain_edge(
+            data, node_idx_1, node_1_type, node_idx_2, node_2_type
         )
 
         output = {}
-        edge_filter = (self.edge_index[1] == node_idx_1) | (
-            self.edge_index[1] == node_idx_2
-        )
-        temp_edge_index = self.edge_index[0, edge_filter].cpu().numpy()
-        temp_edge_mask = edge_mask[edge_filter].cpu().numpy()
-        for node_idx, weight in zip(temp_edge_index, temp_edge_mask):
-            output[node_idx] = (output.get(node_idx, weight) + weight) / 2
+        for k, v in edge_mask.items():
+            edge_index = data.edge_index_dict[k]
+            for n, val in zip(edge_index[0, sub_edge_mask[k]], v[sub_edge_mask[k]]):
+                output[(k[0], n.item())] = val.sigmoid().item()
 
         return output
