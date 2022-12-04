@@ -1,47 +1,49 @@
+from collections import defaultdict
+
 import torch
 from torch_geometric.utils import get_num_hops
 
 from src.explainers.explainer import Explainer
-from src.utils import get_neighbors_single_node, sigmoid
+from src.utils.utils import sigmoid, device
+from src.utils.neighbors import get_neighbors
 
 
 class EmbeddingExplainer(Explainer):
-    def __init__(self, pred_model, x, edge_index):
-        super().__init__(pred_model, x, edge_index)
+    def __init__(self, pred_model):
+        super().__init__(pred_model)
 
         self.num_hops = get_num_hops(pred_model)
 
-    def explain_edge(self, node_idx_1, node_idx_2, target):
-        # TODO: Can use k_hop_subgraph here, not urgent
-        x, edge_index = self.x, self.edge_index
+    def explain_edge(
+        self, data, node_idx_1, node_1_type, node_idx_2, node_2_type, target
+    ):
+        neighbors = get_neighbors(
+            data, node_idx_1, node_1_type, node_idx_2, node_2_type
+        )
 
-        neighbors_1 = get_neighbors_single_node(edge_index, node_idx_1)
-        if len(neighbors_1) > 1:
-            label_index = torch.tensor([[node_idx_2 for _ in neighbors_1], neighbors_1])
-            label_index = label_index.to(x.device)
-            node_idx_1_sim = self.pred_model(x, edge_index, label_index)[1]
-        else:
-            node_idx_1_sim = torch.zeros(1)
+        output = defaultdict(int)
+        z_dict = self.pred_model.encode(data.x_dict, data.edge_index_dict)
+        for n_idx, n_type in [(node_idx_1, node_1_type), (node_idx_2, node_2_type)]:
+            for k, v in neighbors.items():
+                if len(v) == 0:
+                    continue
 
-        neighbors_2 = get_neighbors_single_node(edge_index, node_idx_2)
-        if len(neighbors_2) > 1:
-            label_index = torch.tensor([[node_idx_1 for _ in neighbors_2], neighbors_2])
-            label_index = label_index.to(x.device)
-            node_idx_2_sim = self.pred_model(x, edge_index, label_index)[1]
-        else:
-            node_idx_2_sim = torch.zeros(1)
+                if (k, "to", n_type) in data.edge_index_dict:
+                    edge_label_index = [v, [n_idx] * len(v)]
+                    edge_key = (k, "to", n_type)
+                elif (n_type, "to", k) in data.edge_index_dict:
+                    edge_label_index = [[n_idx] * len(v), v]
+                    edge_key = (n_type, "to", k)
+                else:
+                    continue
 
-        # maximize embedding similarity for positive edge (target=1), minimize otherwise
-        mult = 1 if target == 1 else -1
+                edge_label_index = torch.tensor(edge_label_index).to(device)
+                sim = self.pred_model.decode(
+                    z_dict[edge_key[0]], z_dict[edge_key[2]], edge_label_index
+                )
 
-        output = {}
-        for i, neighbor in enumerate(neighbors_1):
-            output[neighbor] = sigmoid(mult * node_idx_1_sim[i])
-        for i, neighbor in enumerate(neighbors_2):
-            new = sigmoid(mult * node_idx_2_sim[i])
-            if neighbor in output:
-                old = output[neighbor]
-                output[neighbor] = max(old, new)
-            else:
-                output[neighbor] = new
+                for i, neighbor in enumerate(v):
+                    value = sigmoid(sim[i]).item()
+                    output[(k, neighbor)] = max(output[(k, neighbor)], value)
+
         return output
