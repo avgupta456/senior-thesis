@@ -1,5 +1,6 @@
 import torch_geometric.transforms as T
 from torch_geometric.datasets import SNAPDataset
+from torch_geometric.loader import DataLoader
 
 from src.utils.utils import device
 
@@ -22,8 +23,9 @@ def get_facebook_dataset():
         root="./data/SNAPDataset", name="ego-facebook", transform=transform
     )
 
-    # TODO: Add other connected components
-    train_data, val_data, test_data = dataset[0]
+    train_data = next(iter(DataLoader([x[0] for x in dataset], batch_size=10)))
+    val_data = next(iter(DataLoader([x[1] for x in dataset], batch_size=10)))
+    test_data = next(iter(DataLoader([x[2] for x in dataset], batch_size=10)))
 
     # TRAIN DATA
 
