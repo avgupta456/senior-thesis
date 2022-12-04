@@ -1,5 +1,4 @@
 import torch
-
 from torch_geometric.data import HeteroData
 
 from src.utils.utils import device

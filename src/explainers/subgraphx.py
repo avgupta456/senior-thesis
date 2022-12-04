@@ -4,9 +4,9 @@ import numpy as np
 import torch
 
 from src.explainers.explainer import Explainer
-from src.utils.utils import sigmoid, device
 from src.utils.neighbors import get_neighbors
 from src.utils.subgraph import remove_edge_connections
+from src.utils.utils import device, sigmoid
 
 
 class SubgraphX(Explainer):

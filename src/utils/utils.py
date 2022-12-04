@@ -23,10 +23,3 @@ def _to_numpy(x):
     if isinstance(x, torch.Tensor):
         return tensor_to_numpy(x)
     return x
-
-
-# TODO: delete if unused
-def _mask_nodes(x, mask):
-    new_x = x.clone()
-    new_x[~mask] = 0
-    return new_x

@@ -4,8 +4,8 @@ import torch
 from torch_geometric.utils import get_num_hops
 
 from src.explainers.explainer import Explainer
-from src.utils.utils import sigmoid, device
 from src.utils.neighbors import get_neighbors
+from src.utils.utils import device, sigmoid
 
 
 class EmbeddingExplainer(Explainer):

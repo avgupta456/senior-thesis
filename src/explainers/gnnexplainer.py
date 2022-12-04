@@ -1,5 +1,4 @@
 import torch
-
 from torch_geometric.nn import MessagePassing
 
 from src.explainers.explainer import Explainer
@@ -44,15 +43,17 @@ def clear_masks(model: torch.nn.Module):
 
 
 class _GNNExplainer:
+    # overwritten, dataset specific
     coeffs = {
-        "edge_size": 5.0,
-        "edge_ent": -2.0,
+        "edge_size": None,
+        "edge_ent": None,
     }
 
     def __init__(self, model, epochs, lr, **kwargs):
         self.model = model
         self.lr = lr
         self.epochs = epochs
+        self.coeffs.update(kwargs)
         self._clear_masks()
 
     def _initialize_masks(self, edge_index_dict, sub_edge_mask):
@@ -75,9 +76,20 @@ class _GNNExplainer:
             m.append(v[self.sub_edge_mask[k]])
         m = torch.cat(m).sigmoid()
 
-        edge_size_loss = torch.mean(m)
+        edge_size_loss = torch.sum(m)
         ent = -m * torch.log(m + EPS) - (1 - m) * torch.log(1 - m + EPS)
         edge_ent_loss = ent.mean()
+
+        """
+        # TODO: Finalize loss function coefficients
+        print(
+            error_loss,
+            self.coeffs["edge_size"] * edge_size_loss,
+            self.coeffs["edge_ent"] * edge_ent_loss,
+        )
+
+        print(m)
+        """
 
         loss = (
             error_loss
@@ -129,9 +141,9 @@ class _GNNExplainer:
 
 
 class GNNExplainer(Explainer):
-    def __init__(self, pred_model, epochs, lr):
+    def __init__(self, pred_model, epochs, lr, **kwargs):
         super().__init__(pred_model)
-        self.explainer = _GNNExplainer(pred_model, epochs=epochs, lr=lr)
+        self.explainer = _GNNExplainer(pred_model, epochs=epochs, lr=lr, **kwargs)
 
     def explain_edge(self, data, node_idx_1, node_1_type, node_idx_2, node_2_type):
         edge_mask, sub_edge_mask = self.explainer.explain_edge(

@@ -5,10 +5,18 @@ from src.explainers.subgraphx import SubgraphX
 
 
 def sample_gnnexplainer(
-    model, data, node_idx_1, node_1_type, node_idx_2, node_2_type, epochs=50, lr=0.1
+    model,
+    data,
+    node_idx_1,
+    node_1_type,
+    node_idx_2,
+    node_2_type,
+    epochs=50,
+    lr=0.01,
+    **kwargs
 ):
     # GNNExplainer, 100 queries per explanation
-    gnnexplainer = GNNExplainer(model, epochs=epochs, lr=lr)
+    gnnexplainer = GNNExplainer(model, epochs=epochs, lr=lr, **kwargs)
     return gnnexplainer.explain_edge(
         data, node_idx_1, node_1_type, node_idx_2, node_2_type
     )

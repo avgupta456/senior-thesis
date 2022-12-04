@@ -1,5 +1,6 @@
-from collections import defaultdict
+import json
 import sys
+from collections import defaultdict
 
 import matplotlib.pyplot as plt
 import torch
@@ -8,14 +9,14 @@ from src.datasets.facebook import get_facebook_dataset
 from src.datasets.imdb import get_imdb_dataset
 from src.explainers.main import (
     sample_embedding,
-    sample_gnnexplainer,
+    sample_gnnexplainer as _sample_gnnexplainer,
     sample_random,
     sample_subgraphx,
 )
-from src.pred.model import SimpleNet, Net
-from src.utils.utils import device, sigmoid
-from src.utils.subgraph import edge_centered_subgraph, remove_edge_connections
+from src.pred.model import Net, SimpleNet
 from src.utils.neighbors import get_neighbors
+from src.utils.subgraph import edge_centered_subgraph, remove_edge_connections
+from src.utils.utils import device, sigmoid
 
 
 def get_dataset_and_model(name):
@@ -24,15 +25,17 @@ def get_dataset_and_model(name):
         model = Net(128, 32, metadata=train_data.metadata()).to(device)
         model.load_state_dict(torch.load("./models/facebook_model.pt"))
         key = ("person", "to", "person")
+        gnnexplainer_config = {"edge_size": 0.1, "edge_ent": -1.0}
     elif name == "imdb":
         train_data, val_data, test_data = get_imdb_dataset()
         model = SimpleNet(128, 32, metadata=train_data.metadata()).to(device)
         model.load_state_dict(torch.load("./models/imdb_model.pt"))
         key = ("movie", "to", "actor")
+        gnnexplainer_config = {"edge_size": 0.1, "edge_ent": -1.0}
     else:
         raise ValueError(f"Unknown dataset: {name}")
 
-    return train_data, val_data, test_data, model, key
+    return train_data, val_data, test_data, model, key, gnnexplainer_config
 
 
 def run_experiment(
@@ -58,9 +61,8 @@ def run_experiment(
         )
 
         _label_index = torch.tensor([[_node_idx_1], [_node_idx_2]]).to(device)
-        initial_pred = model(_data.x_dict, _data.edge_index_dict, _label_index, key)
-        initial_pred = sigmoid(initial_pred[1]).item()
-        if initial_pred > 0.25:
+        initial_pred = model(_data.x_dict, _data.edge_index_dict, _label_index, key)[1]
+        if sigmoid(initial_pred).item() > 0.25:
             continue
 
         curr_data, node_idx_1, node_idx_2 = edge_centered_subgraph(
@@ -75,9 +77,8 @@ def run_experiment(
         _label_index = torch.tensor([[node_idx_1], [node_idx_2]]).to(device)
         final_pred = model(
             curr_data.x_dict, curr_data.edge_index_dict, _label_index, key
-        )
-        final_pred = sigmoid(final_pred[1]).item()
-        if final_pred < 0.75:
+        )[1]
+        if sigmoid(final_pred).item() < 0.75:
             continue
 
         print(
@@ -93,10 +94,10 @@ def run_experiment(
             n_neighbors,
             " \t",
             "initial_pred",
-            round(initial_pred, 4),
+            round(initial_pred.sigmoid().item(), 4),
             "\t",
             "final_pred",
-            round(final_pred, 4),
+            round(final_pred.sigmoid().item(), 4),
         )
 
         sampler_outputs = []
@@ -136,14 +137,17 @@ def run_experiment(
                     remove_data.x_dict, remove_data.edge_index_dict, _label_index, key
                 )[1]
 
-                new_node = None if k == 0 else output[k - 1][0]
+                new_node = None
+                if k > 0:
+                    new_node = output[k - 1][0][0], int(output[k - 1][0][1])
+
                 results[sampler_name].append(
                     [
                         new_node,
-                        float(initial_pred),
+                        float(initial_pred.item()),
                         float(expl_pred.item()),
                         float(remove_pred.item()),
-                        float(final_pred),
+                        float(final_pred.item()),
                     ]
                 )
 
@@ -175,21 +179,41 @@ def run_experiment(
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print("Usage: python main.py <dataset>")
+    if len(sys.argv) != 4:
+        print("Usage: python process.py <dataset> <start> <stop>")
+
+    # Load Dataset
 
     dataset_name = sys.argv[1]
-    train_data, val_data, test_data, model, key = get_dataset_and_model(dataset_name)
+    start = int(sys.argv[2])
+    stop = int(sys.argv[3])
+
+    (
+        train_data,
+        val_data,
+        test_data,
+        model,
+        key,
+        gnnexplainer_config,
+    ) = get_dataset_and_model(dataset_name)
 
     print(f"Dataset: {dataset_name}")
     print()
 
-    run_experiment(
+    # Run Experiment
+
+    def sample_gnnexplainer(model, data, node_idx_1, start, node_idx_2, end):
+        return _sample_gnnexplainer(
+            model, data, node_idx_1, start, node_idx_2, end, **gnnexplainer_config
+        )
+
+    actual_stop = min(stop, test_data.edge_label_index_dict[key].shape[1])
+    all_results = run_experiment(
         model,
         test_data,
         key,
-        0,
-        test_data.edge_label_index_dict[key].shape[1],
+        start,
+        actual_stop,
         [
             sample_gnnexplainer,
             sample_subgraphx,
@@ -202,5 +226,8 @@ if __name__ == "__main__":
             "Embedding",
             "Random",
         ],
-        show_plots=True,
+        show_plots=False,
     )
+
+    with open(f"./results/hetero/data_{dataset_name}_{start}_{stop}.json", "w") as f:
+        json.dump(all_results, f)
