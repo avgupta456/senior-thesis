@@ -11,7 +11,7 @@ def train_model(epochs):
     train_data, val_data, test_data = get_facebook_dataset()
 
     model = Net(128, 32, metadata=train_data.metadata()).to(device)
-    optimizer = Adam(params=model.parameters(), lr=3e-3)
+    optimizer = Adam(params=model.parameters(), lr=3e-3, weight_decay=2e-3)
     criterion = BCEWithLogitsLoss()
 
     key = ("person", "to", "person")
@@ -21,5 +21,5 @@ def train_model(epochs):
 
 
 if __name__ == "__main__":
-    epochs = 1000
+    epochs = 300
     train_model(epochs)

@@ -11,7 +11,7 @@ def sample_gnnexplainer(
     node_1_type,
     node_idx_2,
     node_2_type,
-    epochs=50,
+    epochs=100,
     lr=0.01,
     **kwargs
 ):

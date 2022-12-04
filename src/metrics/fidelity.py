@@ -95,8 +95,8 @@ def fid_minus_prob(full_pred, expl_pred):
 def charact_prob(
     full_pred, expl_pred, remove_pred, w_plus: int = 0.5, w_minus: int = 0.5
 ):
-    fid_plus = fid_plus_prob(full_pred, remove_pred)
-    fid_minus = 1 - fid_minus_prob(full_pred, expl_pred)
+    fid_plus = fid_plus_prob(full_pred, remove_pred).clip(0, 1)
+    fid_minus = 1 - fid_minus_prob(full_pred, expl_pred).clip(0, 1)
     return ((w_plus + w_minus) * fid_plus * fid_minus) / (
         w_plus * fid_minus + w_minus * fid_plus
     )

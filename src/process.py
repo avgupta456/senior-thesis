@@ -50,6 +50,7 @@ def run_experiment(
     for i in range(edge_label_index.shape[1]):
         node_idx_1 = edge_label_index[0, i]
         node_idx_2 = edge_label_index[1, i]
+        skip = False
 
         # Ignore negative edges
         target = int(edge_label[i].item())
@@ -63,7 +64,7 @@ def run_experiment(
         _label_index = torch.tensor([[_node_idx_1], [_node_idx_2]]).to(device)
         initial_pred = model(_data.x_dict, _data.edge_index_dict, _label_index, key)[1]
         if sigmoid(initial_pred).item() > 0.25:
-            continue
+            skip = True
 
         curr_data, node_idx_1, node_idx_2 = edge_centered_subgraph(
             node_idx_1, start, node_idx_2, end, data, 2
@@ -72,14 +73,14 @@ def run_experiment(
         neighbors = get_neighbors(curr_data, node_idx_1, start, node_idx_2, end)
         n_neighbors = sum(len(n) for n in neighbors.values())
         if n_neighbors <= 5:
-            continue
+            skip = True
 
         _label_index = torch.tensor([[node_idx_1], [node_idx_2]]).to(device)
         final_pred = model(
             curr_data.x_dict, curr_data.edge_index_dict, _label_index, key
         )[1]
         if sigmoid(final_pred).item() < 0.75:
-            continue
+            skip = True
 
         print(
             i,
@@ -98,7 +99,12 @@ def run_experiment(
             "\t",
             "final_pred",
             round(final_pred.sigmoid().item(), 4),
+            "\t",
+            "SKIPPED" if skip else "",
         )
+
+        if skip:
+            continue
 
         sampler_outputs = []
         for sampler, sampler_name in zip(samplers, sampler_names):
@@ -226,7 +232,7 @@ if __name__ == "__main__":
             "Embedding",
             "Random",
         ],
-        show_plots=False,
+        show_plots=True,
     )
 
     with open(f"./results/hetero/data_{dataset_name}_{start}_{stop}.json", "w") as f:

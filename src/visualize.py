@@ -148,4 +148,4 @@ if __name__ == "__main__":
 
     processed_data = process_data(all_data, sampler_names)
     plot_continuous_sparsity(processed_data, sampler_names)
-    plot_topk_sparsity(processed_data, sampler_names, [2, 4, 8, 16])
+    plot_topk_sparsity(processed_data, sampler_names, [1, 3, 5, 10])
