@@ -7,7 +7,6 @@ import torch
 from src.datasets.facebook import get_facebook_dataset
 from src.datasets.imdb import get_imdb_dataset
 from src.explainers.main import (  # noqa: F401
-    sample_edge_subgraphx,
     sample_embedding,
     sample_gnnexplainer,
     sample_random,
@@ -185,15 +184,13 @@ if __name__ == "__main__":
         test_data.edge_label_index_dict[key].shape[1],
         [
             # sample_gnnexplainer,
-            # sample_subgraphx,
-            # sample_edge_subgraphx,
+            sample_subgraphx,
             sample_embedding,
             sample_random,
         ],
         [
             # "GNNExplainer",
-            # "SubgraphX",
-            # "EdgeSubgraphX",
+            "SubgraphX",
             "Embedding",
             "Random",
         ],

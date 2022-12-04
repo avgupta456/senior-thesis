@@ -1,4 +1,3 @@
-from src.explainers.edge_subgraphx import EdgeSubgraphX
 from src.explainers.embedding import EmbeddingExplainer
 from src.explainers.gnnexplainer import GNNExplainer
 from src.explainers.random import RandomExplainer
@@ -29,16 +28,6 @@ def sample_subgraphx(
     # SubgraphX, 5 * size(neighborhood) queries per explanation
     subgraphx = SubgraphX(model, T=T)
     return subgraphx.explain_edge(
-        data, node_idx_1, node_1_type, node_idx_2, node_2_type, target
-    )
-
-
-def sample_edge_subgraphx(
-    model, data, node_idx_1, node_1_type, node_idx_2, node_2_type, target, T=5
-):
-    # EdgeSubgraphX, 5 * size(neighborhood) queries per explanation
-    edge_subgraphx = EdgeSubgraphX(model, T=T)
-    return edge_subgraphx.explain_edge(
         data, node_idx_1, node_1_type, node_idx_2, node_2_type, target
     )
 
