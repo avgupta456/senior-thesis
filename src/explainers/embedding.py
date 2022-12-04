@@ -9,22 +9,22 @@ from src.utils.neighbors import get_neighbors
 
 
 class EmbeddingExplainer(Explainer):
+    # Output is model probability of the edge to neighbor existing
+    # Previously model probability of neighbor to other endpoint
+    # But this fails for heterogeneous graphs
+    # (A <-> B <-> C, but A <-> C does not exist)
+
     def __init__(self, pred_model):
         super().__init__(pred_model)
 
         self.num_hops = get_num_hops(pred_model)
 
-    def explain_edge(
-        self, data, node_idx_1, node_1_type, node_idx_2, node_2_type, target
-    ):
-        neighbors = get_neighbors(
-            data, node_idx_1, node_1_type, node_idx_2, node_2_type
-        )
-
+    def explain_edge(self, data, node_idx_1, node_1_type, node_idx_2, node_2_type):
         output = defaultdict(int)
         z_dict = self.pred_model.encode(data.x_dict, data.edge_index_dict)
         for n_idx, n_type in [(node_idx_1, node_1_type), (node_idx_2, node_2_type)]:
-            for k, v in neighbors.items():
+            neighbors_1 = get_neighbors(data, n_idx, n_type, 0, "")
+            for k, v in neighbors_1.items():
                 if len(v) == 0:
                     continue
 
