@@ -1,6 +1,6 @@
 import numpy as np
 
-from src.utils import _to_numpy
+from src.utils.utils import _to_numpy
 
 """
 Phenomenon Metrics

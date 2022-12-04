@@ -1,40 +1,12 @@
-import json
 from collections import defaultdict
+import json
+import sys
 
 import matplotlib.pyplot as plt
 import numpy as np
 
 from src.metrics.fidelity import charact_prob, fid_minus_prob, fid_plus_prob
-from src.utils import sigmoid
-
-
-def filter_data(all_data, filter=None):
-    filtered_data = {}
-    for i, data in all_data.items():
-        # Only handles positive edge explanations currently, > 285 --> negative
-        if int(i) > 285:
-            continue
-
-        # Ensure empty prediction is close to 0 (negative), full prediction is close to 1 (positive)
-        _, initial_pred, expl_pred, _ = data["Random"][0]
-        if not (sigmoid(expl_pred) < 1 / 3 and sigmoid(initial_pred) > 2 / 3):
-            continue
-
-        # And there are at least 10 nodes in the joint neighborhood
-        n = len(data["Random"])
-        if n < 10:
-            continue
-
-        # Additional filters
-        if filter == "small" and n > 50:
-            continue
-        if filter == "medium" and (n < 50 or n > 200):
-            continue
-        if filter == "large" and n < 200:
-            continue
-
-        filtered_data[i] = data
-    return filtered_data
+from src.utils.utils import sigmoid
 
 
 def process_data(filtered_data, sampler_names):
@@ -45,7 +17,7 @@ def process_data(filtered_data, sampler_names):
         for name in sampler_names:
             processed_data[i][name] = []
             for j in range(n):
-                _, initial_pred, expl_pred, remove_pred = data[name][j]
+                _, initial_pred, expl_pred, remove_pred, _ = data[name][j]
                 sig_initial_pred = sigmoid(initial_pred)
                 sig_expl_pred = sigmoid(expl_pred)
                 sig_remove_pred = sigmoid(remove_pred)
@@ -157,21 +129,23 @@ def plot_topk_sparsity(processed_data, sampler_names, k_arr):
 
 
 if __name__ == "__main__":
-    with open("./results/vary_sparsity/data_600.json", "r") as f:
-        all_data = json.load(f)
+    if len(sys.argv) != 4:
+        print("Usage: python process.py <dataset> <start> <stop>")
 
-    filtered_data = filter_data(all_data, filter="large")
+    dataset = sys.argv[1]
+    start = int(sys.argv[2])
+    stop = int(sys.argv[3])
+
+    with open(f"./results/hetero/data_{dataset}_{start}_{stop}.json", "r") as f:
+        all_data = json.load(f)
 
     sampler_names = [
         "GNNExplainer",
         "SubgraphX",
-        "EdgeSubgraphX",
         "Embedding",
-        "Degree",
         "Random",
     ]
 
-    processed_data = process_data(filtered_data, sampler_names)
-
+    processed_data = process_data(all_data, sampler_names)
     plot_continuous_sparsity(processed_data, sampler_names)
     plot_topk_sparsity(processed_data, sampler_names, [5, 10, 20])
