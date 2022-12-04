@@ -25,13 +25,13 @@ def get_dataset_and_model(name):
         model = Net(128, 32, metadata=train_data.metadata()).to(device)
         model.load_state_dict(torch.load("./models/facebook_model.pt"))
         key = ("person", "to", "person")
-        gnnexplainer_config = {"edge_size": 0.1, "edge_ent": -1.0}
+        gnnexplainer_config = {"edge_size": 20, "edge_ent": -1.0}
     elif name == "imdb":
         train_data, val_data, test_data = get_imdb_dataset()
         model = SimpleNet(128, 32, metadata=train_data.metadata()).to(device)
         model.load_state_dict(torch.load("./models/imdb_model.pt"))
         key = ("movie", "to", "actor")
-        gnnexplainer_config = {"edge_size": 0.1, "edge_ent": -1.0}
+        gnnexplainer_config = {"edge_size": 20, "edge_ent": -1.0}
     else:
         raise ValueError(f"Unknown dataset: {name}")
 
@@ -232,7 +232,7 @@ if __name__ == "__main__":
             "Embedding",
             "Random",
         ],
-        show_plots=True,
+        show_plots=False,
     )
 
     with open(f"./results/hetero/data_{dataset_name}_{start}_{stop}.json", "w") as f:

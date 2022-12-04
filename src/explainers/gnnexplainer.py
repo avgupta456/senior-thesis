@@ -1,3 +1,5 @@
+from math import sqrt
+
 import torch
 from torch_geometric.nn import MessagePassing
 
@@ -56,40 +58,30 @@ class _GNNExplainer:
         self.coeffs.update(kwargs)
         self._clear_masks()
 
-    def _initialize_masks(self, edge_index_dict, sub_edge_mask):
+    def _initialize_masks(self, N, edge_index_dict, sub_edge_mask):
         self.edge_mask = {}
+        std = sqrt(2 / N)
         for k, v in edge_index_dict.items():
             E = v.size(1)
             E_1, mask = sub_edge_mask[k].sum(), 100 * torch.ones(E)
-            mask[sub_edge_mask[k]] = torch.randn(E_1)
+            mask[sub_edge_mask[k]] = torch.randn(E_1) * std
             self.edge_mask[k] = torch.nn.Parameter(mask)
 
     def _clear_masks(self):
         clear_masks(self.model)
         self.edge_mask = None
 
-    def get_loss(self, out, prediction):
-        error_loss = -out[prediction]
+    def get_loss(self, log_logits, prediction):
+        error_loss = -log_logits[prediction]
 
         m = []
         for k, v in self.edge_mask.items():
             m.append(v[self.sub_edge_mask[k]])
         m = torch.cat(m).sigmoid()
 
-        edge_size_loss = torch.sum(m)
+        edge_size_loss = (torch.mean(m) - 0.5) ** 2
         ent = -m * torch.log(m + EPS) - (1 - m) * torch.log(1 - m + EPS)
         edge_ent_loss = ent.mean()
-
-        """
-        # TODO: Finalize loss function coefficients
-        print(
-            error_loss,
-            self.coeffs["edge_size"] * edge_size_loss,
-            self.coeffs["edge_ent"] * edge_ent_loss,
-        )
-
-        print(m)
-        """
 
         loss = (
             error_loss
@@ -116,7 +108,8 @@ class _GNNExplainer:
 
         self.sub_edge_mask = sub_edge_mask
 
-        self._initialize_masks(data.edge_index_dict, self.sub_edge_mask)
+        N = sum([sum(v) for v in sub_edge_mask.values()])
+        self._initialize_masks(N, data.edge_index_dict, self.sub_edge_mask)
 
         set_hetero_masks(
             self.model, self.edge_mask, data.edge_index_dict, apply_sigmoid=True

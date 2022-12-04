@@ -12,7 +12,7 @@ def sample_gnnexplainer(
     node_idx_2,
     node_2_type,
     epochs=100,
-    lr=0.01,
+    lr=0.05,
     **kwargs
 ):
     # GNNExplainer, 100 queries per explanation
