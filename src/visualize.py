@@ -17,7 +17,7 @@ def process_data(filtered_data, sampler_names):
         for name in sampler_names:
             processed_data[i][name] = []
             for j in range(n):
-                _, initial_pred, expl_pred, remove_pred, _ = data[name][j]
+                _, _, expl_pred, remove_pred, initial_pred = data[name][j]
                 sig_initial_pred = sigmoid(initial_pred)
                 sig_expl_pred = sigmoid(expl_pred)
                 sig_remove_pred = sigmoid(remove_pred)
@@ -148,4 +148,4 @@ if __name__ == "__main__":
 
     processed_data = process_data(all_data, sampler_names)
     plot_continuous_sparsity(processed_data, sampler_names)
-    plot_topk_sparsity(processed_data, sampler_names, [5, 10, 20])
+    plot_topk_sparsity(processed_data, sampler_names, [2, 4, 8, 16])
