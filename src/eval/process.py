@@ -218,5 +218,5 @@ if __name__ == "__main__":
         show_plots=show_plots,
     )
 
-    with open(f"./results/hetero/data_{dataset_name}_{start}_{stop}.json", "w") as f:
+    with open(f"./results/data/data_{dataset_name}_{start}_{stop}.json", "w") as f:
         json.dump(all_results, f)

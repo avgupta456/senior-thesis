@@ -136,7 +136,7 @@ if __name__ == "__main__":
     start = int(sys.argv[2])
     stop = int(sys.argv[3])
 
-    with open(f"./results/hetero/data_{dataset}_{start}_{stop}.json", "r") as f:
+    with open(f"./results/data/data_{dataset}_{start}_{stop}.json", "r") as f:
         all_data = json.load(f)
 
     sampler_names = [
