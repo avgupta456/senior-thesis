@@ -15,11 +15,21 @@ def train_model(epochs):
     criterion = BCEWithLogitsLoss()
 
     key = ("person", "to", "person")
-    run(model, optimizer, criterion, train_data, val_data, test_data, key, epochs)
+    run(
+        "facebook",
+        model,
+        optimizer,
+        criterion,
+        train_data,
+        val_data,
+        test_data,
+        key,
+        epochs,
+    )
 
-    torch.save(model.state_dict(), "./models/facebook_model.pt")
+    torch.save(model.state_dict(), "./models/final_facebook_model.pt")
 
 
 if __name__ == "__main__":
-    epochs = 300
+    epochs = 200
     train_model(epochs)

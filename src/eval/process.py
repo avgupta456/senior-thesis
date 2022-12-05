@@ -43,7 +43,7 @@ def run_experiment(
 
         _label_index = torch.tensor([[_node_idx_1], [_node_idx_2]]).to(device)
         initial_pred = model(_data.x_dict, _data.edge_index_dict, _label_index, key)[1]
-        if sigmoid(initial_pred).item() > 0.25:
+        if sigmoid(initial_pred).item() > 1 / 3:
             skip = True
 
         curr_data, node_idx_1, node_idx_2 = edge_centered_subgraph(
@@ -59,7 +59,7 @@ def run_experiment(
         final_pred = model(
             curr_data.x_dict, curr_data.edge_index_dict, _label_index, key
         )[1]
-        if sigmoid(final_pred).item() < 0.75:
+        if sigmoid(final_pred).item() < 2 / 3:
             skip = True
 
         print(

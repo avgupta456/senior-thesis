@@ -2,13 +2,28 @@ import warnings
 
 import torch
 from sklearn.metrics import accuracy_score, roc_auc_score
-from torch_geometric.nn import SAGEConv, to_hetero
+from torch_geometric.nn import SAGEConv, GCNConv, to_hetero  # noqa F401
 from torch_geometric.utils import negative_sampling
 
 warnings.filterwarnings("ignore", category=UserWarning)
 
 
-class Encoder(torch.nn.Module):
+"""
+# NOTE: Unused, Facebook Ego still uses SAGEConv Encoder
+class GCN_Encoder(torch.nn.Module):
+    def __init__(self, hidden_channels, out_channels):
+        super().__init__()
+        self.conv1 = GCNConv(-1, hidden_channels, add_self_loops=False)
+        self.conv2 = GCNConv(-1, out_channels, add_self_loops=False)
+
+    def forward(self, x, edge_index):
+        x = self.conv1(x, edge_index).relu()
+        return self.conv2(x, edge_index)
+"""
+
+
+# TODO: GCN does not work here, but look into GAT, GIN
+class SAGE_Encoder(torch.nn.Module):
     def __init__(self, hidden_channels, out_channels):
         super().__init__()
         self.conv1 = SAGEConv((-1, -1), hidden_channels)
@@ -19,11 +34,12 @@ class Encoder(torch.nn.Module):
         return self.conv2(x, edge_index)
 
 
+# Used by IMDB and LastFM Datasets
 class SimpleNet(torch.nn.Module):
     def __init__(self, hidden_channels, out_channels, metadata):
         super().__init__()
         self.encoder = to_hetero(
-            Encoder(hidden_channels=hidden_channels, out_channels=out_channels),
+            SAGE_Encoder(hidden_channels=hidden_channels, out_channels=out_channels),
             metadata,
         )
 
@@ -41,11 +57,12 @@ class SimpleNet(torch.nn.Module):
         return torch.hstack((-out, out)).T
 
 
+# Used by Facebook Ego Dataset
 class Net(torch.nn.Module):
     def __init__(self, hidden_channels, out_channels, metadata):
         super().__init__()
         self.encoder = to_hetero(
-            Encoder(hidden_channels=hidden_channels, out_channels=out_channels),
+            SAGE_Encoder(hidden_channels=hidden_channels, out_channels=out_channels),
             metadata,
         )
 
@@ -117,16 +134,19 @@ def test(model, data, key):
     return roc_auc_score(a, b), accuracy_score(a, c)
 
 
-def run(model, optimizer, criterion, train_data, val_data, test_data, key, epochs):
-    best_val_auc = final_test_auc = final_test_acc = 0
+def run(
+    dataset, model, optimizer, criterion, train_data, val_data, test_data, key, epochs
+):
+    best_val_acc = final_test_auc = final_test_acc = 0
     for epoch in range(1, epochs + 1):
         loss = train(model, optimizer, criterion, train_data, key)
         val_auc, val_acc = test(model, val_data, key)
         test_auc, test_acc = test(model, test_data, key)
-        if val_auc > best_val_auc:
-            best_val_auc = val_auc
+        if val_acc > best_val_acc:
+            best_val_acc = val_acc
             final_test_auc = test_auc
             final_test_acc = test_acc
+            torch.save(model.state_dict(), f"./models/{dataset}_model.pt")
 
         if epoch % 1 == 0:
             print(
