@@ -5,37 +5,16 @@ from collections import defaultdict
 import matplotlib.pyplot as plt
 import torch
 
-from src.datasets.facebook import get_facebook_dataset
-from src.datasets.imdb import get_imdb_dataset
 from src.explainers.main import (
     sample_embedding,
     sample_gnnexplainer as _sample_gnnexplainer,
     sample_random,
     sample_subgraphx,
 )
-from src.pred.model import Net, SimpleNet
+from src.eval.utils import get_dataset_and_model
 from src.utils.neighbors import get_neighbors
 from src.utils.subgraph import edge_centered_subgraph, remove_edge_connections
 from src.utils.utils import device, sigmoid
-
-
-def get_dataset_and_model(name):
-    if name == "facebook":
-        train_data, val_data, test_data = get_facebook_dataset()
-        model = Net(128, 32, metadata=train_data.metadata()).to(device)
-        model.load_state_dict(torch.load("./models/facebook_model.pt"))
-        key = ("person", "to", "person")
-        gnnexplainer_config = {"edge_size": 20, "edge_ent": -1.0}
-    elif name == "imdb":
-        train_data, val_data, test_data = get_imdb_dataset()
-        model = SimpleNet(128, 32, metadata=train_data.metadata()).to(device)
-        model.load_state_dict(torch.load("./models/imdb_model.pt"))
-        key = ("movie", "to", "actor")
-        gnnexplainer_config = {"edge_size": 20, "edge_ent": -1.0}
-    else:
-        raise ValueError(f"Unknown dataset: {name}")
-
-    return train_data, val_data, test_data, model, key, gnnexplainer_config
 
 
 def run_experiment(
@@ -185,14 +164,15 @@ def run_experiment(
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 4:
-        print("Usage: python process.py <dataset> <start> <stop>")
+    if len(sys.argv) < 4:
+        print("Usage: python process.py <dataset> <start> <stop> <show_plots>")
 
     # Load Dataset
 
     dataset_name = sys.argv[1]
     start = int(sys.argv[2])
     stop = int(sys.argv[3])
+    show_plots = bool(int(sys.argv[4])) if len(sys.argv) > 4 else False
 
     (
         train_data,
@@ -232,7 +212,7 @@ if __name__ == "__main__":
             "Embedding",
             "Random",
         ],
-        show_plots=False,
+        show_plots=show_plots,
     )
 
     with open(f"./results/hetero/data_{dataset_name}_{start}_{stop}.json", "w") as f:

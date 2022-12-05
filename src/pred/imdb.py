@@ -21,5 +21,5 @@ def train_model(epochs):
 
 
 if __name__ == "__main__":
-    epochs = 50
+    epochs = 300
     train_model(epochs)
