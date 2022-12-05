@@ -4,6 +4,10 @@ from sklearn.metrics import accuracy_score, roc_auc_score
 from src.eval.utils import get_dataset_and_model
 
 
+def num_parameters(model):
+    return sum(p.numel() for p in model.parameters() if p.requires_grad)
+
+
 def evaluate_pred_model(data, model, key):
     data = test_data
     start, _, end = key
@@ -37,4 +41,5 @@ if __name__ == "__main__":
 
         print(dataset_name)
         evaluate_pred_model(test_data, model, key)
+        print("Number of parameters:", num_parameters(model))
         print()

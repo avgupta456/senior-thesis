@@ -35,7 +35,9 @@ def process_data(filtered_data, sampler_names):
     return processed_data
 
 
-def plot_continuous_sparsity(processed_data, sampler_names):
+def plot_continuous_sparsity(
+    dataset_name, processed_data, sampler_names, sampler_display_names
+):
     count = len(processed_data)
     x_samples = 1000
     merged_necessary_results = defaultdict(lambda: [0 for _ in range(x_samples)])
@@ -59,20 +61,24 @@ def plot_continuous_sparsity(processed_data, sampler_names):
         ["(1 - Fidelity-)", "Fidelity+", "Characterization"],
     ):
         fig, ax = plt.subplots()
-        for sampler_name in sampler_names:
+        for sampler_name, sampler_display_name in zip(
+            sampler_names, sampler_display_names
+        ):
             ax.plot(
                 [x / x_samples for x in range(cutoff)],
                 [x / count for x in result[sampler_name][:cutoff]],
-                label=sampler_name,
+                label=sampler_display_name,
             )
         ax.set_xlabel("Sparsity")
         ax.set_ylabel(result_label)
-        ax.set_title(f"{result_label} vs Sparsity (n={count})")
+        ax.set_title(f"{dataset_name}: {result_label} vs Sparsity (n={count})")
         ax.legend()
         plt.show()
 
 
-def plot_topk_sparsity(processed_data, sampler_names, k_arr):
+def plot_topk_sparsity(
+    dataset_name, processed_data, sampler_names, sampler_display_names, k_arr
+):
     count = len(processed_data)
     necessary_results = defaultdict(lambda: [[] for _ in k_arr])
     sufficient_results = defaultdict(lambda: [[] for _ in k_arr])
@@ -99,12 +105,14 @@ def plot_topk_sparsity(processed_data, sampler_names, k_arr):
         labels = [f"{k}" for k in k_arr]
         x = range(len(labels))
         width = 0.1
-        for i, sampler_name in enumerate(sampler_names):
+        for i, (sampler_name, sampler_display_name) in enumerate(
+            zip(sampler_names, sampler_display_names)
+        ):
             ax.bar(
                 [a + i * width for a in x],
                 [np.mean(result[sampler_name][i]) for i in range(len(k_arr))],
                 width=width,
-                label=sampler_name,
+                label=sampler_display_name,
             )
             # add error bar
             ax.errorbar(
@@ -123,7 +131,7 @@ def plot_topk_sparsity(processed_data, sampler_names, k_arr):
         ax.set_xticklabels(labels)
         ax.set_xlabel("Top K")
         ax.set_ylabel(result_label)
-        ax.set_title(f"{result_label} vs Top K (n={count})")
+        ax.set_title(f"{dataset_name}: {result_label} vs Top K (n={count})")
         ax.legend()
         plt.show()
 
@@ -146,6 +154,25 @@ if __name__ == "__main__":
         "Random",
     ]
 
+    sampler_display_names = [
+        "Edge GNNExplainer",
+        "Edge SubgraphX",
+        "Embedding Baseline",
+        "Random Baseline",
+    ]
+
+    dataset_name = {
+        "facebook": "Facebook",
+        "imdb": "IMDB",
+    }[dataset]
     processed_data = process_data(all_data, sampler_names)
-    plot_continuous_sparsity(processed_data, sampler_names)
-    plot_topk_sparsity(processed_data, sampler_names, [1, 3, 5, 10])
+    plot_continuous_sparsity(
+        dataset_name, processed_data, sampler_names, sampler_display_names
+    )
+    plot_topk_sparsity(
+        dataset_name,
+        processed_data,
+        sampler_names,
+        sampler_display_names,
+        [1, 3, 5, 10],
+    )
