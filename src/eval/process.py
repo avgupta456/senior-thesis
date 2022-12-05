@@ -1,12 +1,13 @@
 import json
 import sys
+from datetime import datetime
 from collections import defaultdict
 
 import matplotlib.pyplot as plt
 import torch
 
 from src.eval.utils import get_dataset_and_model
-from src.explainers.main import (
+from src.explainers.main import (  # noqa: F401
     sample_embedding,
     sample_gnnexplainer as _sample_gnnexplainer,
     sample_random,
@@ -51,7 +52,7 @@ def run_experiment(
 
         neighbors = get_neighbors(curr_data, node_idx_1, start, node_idx_2, end)
         n_neighbors = sum(len(n) for n in neighbors.values())
-        if n_neighbors <= 5:
+        if n_neighbors <= 5 or n_neighbors > 200:
             skip = True
 
         _label_index = torch.tensor([[node_idx_1], [node_idx_2]]).to(device)
@@ -87,9 +88,11 @@ def run_experiment(
 
         sampler_outputs = []
         for sampler, sampler_name in zip(samplers, sampler_names):
+            time_start = datetime.now()
             output = sampler(model, curr_data, node_idx_1, start, node_idx_2, end)
             output = sorted(output.items(), key=lambda x: -x[1])
             sampler_outputs.append(output)
+            print(sampler_name, "\t\t", datetime.now() - time_start)
 
         results = defaultdict(list)
         for k in range(n_neighbors + 1):
@@ -172,7 +175,7 @@ if __name__ == "__main__":
     dataset_name = sys.argv[1]
     start = int(sys.argv[2])
     stop = int(sys.argv[3])
-    show_plots = bool(int(sys.argv[4])) if len(sys.argv) > 4 else False
+    show_plots = bool(sys.argv[4]) if len(sys.argv) > 4 else False
 
     (
         train_data,

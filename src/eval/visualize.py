@@ -119,7 +119,7 @@ def plot_topk_sparsity(processed_data, sampler_names, k_arr):
                 ecolor="black",
                 capsize=3,
             )
-        ax.set_xticks([a + (len(x) / 2 + 1) * width for a in x])
+        ax.set_xticks([a + ((len(x) - 1) / 2) * width for a in x])
         ax.set_xticklabels(labels)
         ax.set_xlabel("Top K")
         ax.set_ylabel(result_label)
