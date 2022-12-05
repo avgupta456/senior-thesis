@@ -2,7 +2,6 @@ poetry.lock
 .venv
 
 data
-models
 results/**/data_*
 
 __pycache__
