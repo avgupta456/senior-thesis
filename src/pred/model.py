@@ -8,8 +8,6 @@ from torch_geometric.utils import negative_sampling
 warnings.filterwarnings("ignore", category=UserWarning)
 
 
-"""
-# NOTE: Unused, Facebook Ego still uses SAGEConv Encoder
 class GCN_Encoder(torch.nn.Module):
     def __init__(self, hidden_channels, out_channels):
         super().__init__()
@@ -19,7 +17,6 @@ class GCN_Encoder(torch.nn.Module):
     def forward(self, x, edge_index):
         x = self.conv1(x, edge_index).relu()
         return self.conv2(x, edge_index)
-"""
 
 
 # TODO: GCN does not work here, but look into GAT, GIN
@@ -62,7 +59,7 @@ class Net(torch.nn.Module):
     def __init__(self, hidden_channels, out_channels, metadata):
         super().__init__()
         self.encoder = to_hetero(
-            SAGE_Encoder(hidden_channels=hidden_channels, out_channels=out_channels),
+            GCN_Encoder(hidden_channels=hidden_channels, out_channels=out_channels),
             metadata,
         )
 
