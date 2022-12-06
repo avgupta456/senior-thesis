@@ -5,6 +5,7 @@ import torch
 
 from src.explainers.explainer import Explainer
 from src.utils.neighbors import get_neighbors
+from src.utils.subgraph import remove_edge_connections
 from src.utils.utils import device, sigmoid
 
 
@@ -29,24 +30,19 @@ class SubgraphX(Explainer):
                 curr = (node_type, neighbor)
                 pred_diffs = []
                 for _ in range(self.T):
-                    # nodes to remove, does not include the current node
-                    r_nodes = [x for x in flat_neighbors if np.random.rand() < 0.5]
-                    r_nodes = [x for x in r_nodes if x != curr]
-
-                    # set r_nodes to 0
-                    with_data = data.clone()
-                    for node in r_nodes:
-                        with_data.x_dict[node[0]][node[1]] = 0
-
+                    # edges to remove, does not include the current edge
+                    r_edges = [x for x in flat_neighbors if np.random.rand() < 0.5]
+                    r_edges = [x for x in r_edges if x != curr]
+                    with_data = remove_edge_connections(*inputs, r_edges)
                     with_pred = self.pred_model(
                         with_data.x_dict, with_data.edge_index_dict, _label_index, key
                     )[1].item()
 
-                    # set curr to 0
-                    with_data.x_dict[curr[0]][curr[1]] = 0
+                    r_edges += [curr]
+                    without_data = remove_edge_connections(*inputs, r_edges)
                     without_pred = self.pred_model(
-                        with_data.x_dict,
-                        with_data.edge_index_dict,
+                        without_data.x_dict,
+                        without_data.edge_index_dict,
                         _label_index,
                         key,
                     )[1].item()

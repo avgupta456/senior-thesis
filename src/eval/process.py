@@ -1,15 +1,17 @@
 import json
 import sys
-from datetime import datetime
 from collections import defaultdict
+from datetime import datetime
 
 import matplotlib.pyplot as plt
 import torch
 
 from src.eval.utils import get_dataset_and_model
 from src.explainers.main import (  # noqa: F401
+    sample_edge_gnnexplainer,
+    sample_edge_subgraphx,
     sample_embedding,
-    sample_gnnexplainer as _sample_gnnexplainer,
+    sample_gnnexplainer,
     sample_random,
     sample_subgraphx,
 )
@@ -183,19 +185,12 @@ if __name__ == "__main__":
         test_data,
         model,
         key,
-        gnnexplainer_config,
     ) = get_dataset_and_model(dataset_name)
 
     print(f"Dataset: {dataset_name}")
     print()
 
     # Run Experiment
-
-    def sample_gnnexplainer(model, data, node_idx_1, start, node_idx_2, end):
-        return _sample_gnnexplainer(
-            model, data, node_idx_1, start, node_idx_2, end, **gnnexplainer_config
-        )
-
     actual_stop = min(stop, test_data.edge_label_index_dict[key].shape[1])
     all_results = run_experiment(
         model,
@@ -205,13 +200,17 @@ if __name__ == "__main__":
         actual_stop,
         [
             sample_gnnexplainer,
+            sample_edge_gnnexplainer,
             sample_subgraphx,
+            sample_edge_subgraphx,
             sample_embedding,
             sample_random,
         ],
         [
             "GNNExplainer",
+            "EdgeGNNExplainer",
             "SubgraphX",
+            "EdgeSubgraphX",
             "Embedding",
             "Random",
         ],

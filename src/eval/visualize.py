@@ -36,7 +36,7 @@ def process_data(filtered_data, sampler_names):
 
 
 def plot_continuous_sparsity(
-    dataset_name, processed_data, sampler_names, sampler_display_names
+    dataset_name, processed_data, sampler_names, sampler_display_names, colors
 ):
     count = len(processed_data)
     x_samples = 1000
@@ -61,13 +61,14 @@ def plot_continuous_sparsity(
         ["(1 - Fidelity-)", "Fidelity+", "Characterization"],
     ):
         fig, ax = plt.subplots()
-        for sampler_name, sampler_display_name in zip(
-            sampler_names, sampler_display_names
+        for sampler_name, sampler_display_name, color in zip(
+            sampler_names, sampler_display_names, colors
         ):
             ax.plot(
                 [x / x_samples for x in range(cutoff)],
                 [x / count for x in result[sampler_name][:cutoff]],
                 label=sampler_display_name,
+                color=color,
             )
         ax.set_xlabel("Sparsity")
         ax.set_ylabel(result_label)
@@ -77,7 +78,7 @@ def plot_continuous_sparsity(
 
 
 def plot_topk_sparsity(
-    dataset_name, processed_data, sampler_names, sampler_display_names, k_arr
+    dataset_name, processed_data, sampler_names, sampler_display_names, colors, k_arr
 ):
     count = len(processed_data)
     necessary_results = defaultdict(lambda: [[] for _ in k_arr])
@@ -105,14 +106,15 @@ def plot_topk_sparsity(
         labels = [f"{k}" for k in k_arr]
         x = range(len(labels))
         width = 0.1
-        for i, (sampler_name, sampler_display_name) in enumerate(
-            zip(sampler_names, sampler_display_names)
+        for i, (sampler_name, sampler_display_name, color) in enumerate(
+            zip(sampler_names, sampler_display_names, colors)
         ):
             ax.bar(
                 [a + i * width for a in x],
                 [np.mean(result[sampler_name][i]) for i in range(len(k_arr))],
                 width=width,
                 label=sampler_display_name,
+                color=color,
             )
             # add error bar
             ax.errorbar(
@@ -127,7 +129,7 @@ def plot_topk_sparsity(
                 ecolor="black",
                 capsize=3,
             )
-        ax.set_xticks([a + ((len(x) - 1) / 2) * width for a in x])
+        ax.set_xticks([a + (len(colors) / 2 - 0.5) * width for a in x])
         ax.set_xticklabels(labels)
         ax.set_xlabel("Top K")
         ax.set_ylabel(result_label)
@@ -137,17 +139,20 @@ def plot_topk_sparsity(
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 4:
-        print("Usage: python process.py <dataset> <start> <stop>")
+    if len(sys.argv) < 4:
+        print("Usage: python process.py <dataset> <start> <stop> <group>")
 
     dataset = sys.argv[1]
     start = int(sys.argv[2])
     stop = int(sys.argv[3])
+    group = "" if len(sys.argv) < 5 else sys.argv[4]
 
     with open(f"./results/data/data_{dataset}_{start}_{stop}.json", "r") as f:
         all_data = json.load(f)
 
     sampler_names = [
+        "EdgeGNNExplainer",
+        "EdgeSubgraphX",
         "GNNExplainer",
         "SubgraphX",
         "Embedding",
@@ -157,9 +162,33 @@ if __name__ == "__main__":
     sampler_display_names = [
         "Edge GNNExplainer",
         "Edge SubgraphX",
+        "GNNExplainer",
+        "SubgraphX",
         "Embedding Baseline",
         "Random Baseline",
     ]
+
+    colors = [
+        "tab:blue",
+        "tab:orange",
+        "tab:green",
+        "tab:red",
+        "tab:purple",
+        "tab:brown",
+    ]
+
+    if group == "subgraphx":
+        indices = [1, 3, 5]
+    elif group == "gnnexplainer":
+        indices = [0, 2, 5]
+    elif group == "final":
+        indices = [0, 1, 4, 5]
+    else:
+        indices = range(len(sampler_names))
+
+    sampler_names = [sampler_names[i] for i in indices]
+    sampler_display_names = [sampler_display_names[i] for i in indices]
+    colors = [colors[i] for i in indices]
 
     dataset_name = {
         "facebook": "Facebook",
@@ -167,12 +196,17 @@ if __name__ == "__main__":
     }[dataset]
     processed_data = process_data(all_data, sampler_names)
     plot_continuous_sparsity(
-        dataset_name, processed_data, sampler_names, sampler_display_names
+        dataset_name,
+        processed_data,
+        sampler_names,
+        sampler_display_names,
+        colors,
     )
     plot_topk_sparsity(
         dataset_name,
         processed_data,
         sampler_names,
         sampler_display_names,
+        colors,
         [1, 3, 5, 10],
     )

@@ -2,7 +2,7 @@ import warnings
 
 import torch
 from sklearn.metrics import accuracy_score, roc_auc_score
-from torch_geometric.nn import SAGEConv, GCNConv, to_hetero  # noqa F401
+from torch_geometric.nn import GCNConv, SAGEConv, to_hetero  # noqa F401
 from torch_geometric.utils import negative_sampling
 
 warnings.filterwarnings("ignore", category=UserWarning)

@@ -45,14 +45,7 @@ def clear_masks(model: torch.nn.Module):
 
 
 class _GNNExplainer:
-    coeffs = {
-        "edge_size": 0.005,
-        "edge_reduction": "sum",
-        "node_feat_size": 1.0,
-        "node_feat_reduction": "mean",
-        "edge_ent": 1.0,
-        "node_feat_ent": 0.1,
-    }
+    coeffs = {"edge_size": 20, "edge_ent": -1.0}
 
     def __init__(self, model, epochs, lr, **kwargs):
         self.model = model
@@ -82,10 +75,9 @@ class _GNNExplainer:
             m.append(v[self.sub_edge_mask[k]])
         m = torch.cat(m).sigmoid()
 
-        edge_reduce = getattr(torch, self.coeffs["edge_reduction"])
-        edge_size_loss = self.coeffs["edge_size"] * edge_reduce(m)
+        edge_size_loss = (torch.mean(m) - 0.5) ** 2
         ent = -m * torch.log(m + EPS) - (1 - m) * torch.log(1 - m + EPS)
-        edge_ent_loss = self.coeffs["edge_ent"] * ent.mean()
+        edge_ent_loss = ent.mean()
 
         loss = (
             error_loss
