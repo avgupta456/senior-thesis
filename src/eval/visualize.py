@@ -181,6 +181,8 @@ if __name__ == "__main__":
         indices = [1, 3, 5]
     elif group == "gnnexplainer":
         indices = [0, 2, 5]
+    elif group == "original":
+        indices = [2, 3, 4, 5]
     elif group == "final":
         indices = [0, 1, 4, 5]
     else:
