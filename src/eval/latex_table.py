@@ -21,7 +21,7 @@ def create_latex_table(datasets, dataset_names, sampler_names, k_arr):
                     charact[name][i].append(data[name][k + 1]["charact"])
 
         mean = {
-            name: [sum(charact[name][i]) / count for i in range(len(k_arr))]
+            name: [np.mean(charact[name][i]) for i in range(len(k_arr))]
             for name in sampler_names
         }
         std = {
@@ -62,10 +62,17 @@ def create_latex_table(datasets, dataset_names, sampler_names, k_arr):
                 )
                 if is_best_sampler:
                     print("\\textbf{", end="")
-                print(
-                    f"{dataset_mean[dataset_name][sampler_name][j]:.2f} ",
-                    end="",
-                )
+                # ensure two sig figs
+                if dataset_mean[dataset_name][sampler_name][j] < 0.10:
+                    print(
+                        f"{dataset_mean[dataset_name][sampler_name][j]:.3f} ",
+                        end="",
+                    )
+                else:
+                    print(
+                        f"{dataset_mean[dataset_name][sampler_name][j]:.2f} ",
+                        end="",
+                    )
                 if is_best_sampler:
                     print("}", end="")
                 if i != len(dataset_names) - 1 or j != len(k_arr) - 1:
@@ -85,7 +92,7 @@ def create_latex_table(datasets, dataset_names, sampler_names, k_arr):
 if __name__ == "__main__":
     group = "" if len(sys.argv) < 2 else sys.argv[1]
 
-    with open("./results/raw_data/data_facebook_0_300.json", "r") as f:
+    with open("./results/raw_data/data_facebook_0_1000.json", "r") as f:
         facebook_data = json.load(f)
 
     with open("./results/raw_data/data_imdb_0_10000.json", "r") as f:
