@@ -54,7 +54,7 @@ def run_experiment(
 
         neighbors = get_neighbors(curr_data, node_idx_1, start, node_idx_2, end)
         n_neighbors = sum(len(n) for n in neighbors.values())
-        if n_neighbors <= 5 or n_neighbors > 200:
+        if n_neighbors <= 5 or n_neighbors > 100:
             skip = True
 
         _label_index = torch.tensor([[node_idx_1], [node_idx_2]]).to(device)

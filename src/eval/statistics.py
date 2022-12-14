@@ -8,6 +8,21 @@ def num_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
 
+def evaluate_dataset(test_data):
+    node_types = test_data.node_types
+    edge_types = test_data.edge_types
+    for node_type in node_types:
+        print(
+            f"{node_type}:\t",
+            test_data[node_type].x.shape[0],
+            "nodes\t",
+            test_data[node_type].x.shape[1],
+            "features",
+        )
+    for edge_type in edge_types:
+        print(f"{edge_type}:\t", test_data[edge_type].edge_index.shape[1], "edges")
+
+
 def evaluate_pred_model(data, model, key):
     data = test_data
     start, _, end = key
@@ -36,10 +51,10 @@ if __name__ == "__main__":
             test_data,
             model,
             key,
-            gnnexplainer_config,
         ) = get_dataset_and_model(dataset_name)
 
         print(dataset_name)
+        evaluate_dataset(test_data)
         evaluate_pred_model(test_data, model, key)
         print("Number of parameters:", num_parameters(model))
         print()
