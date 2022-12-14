@@ -34,6 +34,7 @@ def plot_continuous_sparsity(
         ["(1 - Fidelity-)", "Fidelity+", "Characterization"],
     ):
         fig, ax = plt.subplots()
+        fig.tight_layout(pad=3.0)
         for sampler_name, sampler_display_name, color in zip(
             sampler_names, sampler_display_names, colors
         ):
@@ -76,6 +77,7 @@ def plot_topk_sparsity(
     ):
         # Bar Plot with error bars
         fig, ax = plt.subplots()
+        fig.tight_layout(pad=3.0)
         labels = [f"{k}" for k in k_arr]
         x = range(len(labels))
         width = 0.1
@@ -184,5 +186,5 @@ if __name__ == "__main__":
         sampler_names,
         sampler_display_names,
         colors,
-        [1, 3, 5, 10],
+        [1, 5, 10],
     )

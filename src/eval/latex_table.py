@@ -91,7 +91,7 @@ if __name__ == "__main__":
     with open("./results/data/data_imdb_0_10000.json", "r") as f:
         imdb_data = json.load(f)
 
-    with open("./results/data/data_lastfm_0_700.json", "r") as f:
+    with open("./results/data/data_lastfm_0_1000.json", "r") as f:
         lastfm_data = json.load(f)
 
     sampler_names = [
