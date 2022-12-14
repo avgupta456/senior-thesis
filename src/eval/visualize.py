@@ -115,14 +115,14 @@ def plot_topk_sparsity(
 
 if __name__ == "__main__":
     if len(sys.argv) < 4:
-        print("Usage: python process.py <dataset> <start> <stop> <group>")
+        print("Usage: python visualize.py <dataset> <start> <stop> <group>")
 
     dataset = sys.argv[1]
     start = int(sys.argv[2])
     stop = int(sys.argv[3])
     group = "" if len(sys.argv) < 5 else sys.argv[4]
 
-    with open(f"./results/data/data_{dataset}_{start}_{stop}.json", "r") as f:
+    with open(f"./results/raw_data/data_{dataset}_{start}_{stop}.json", "r") as f:
         all_data = json.load(f)
 
     sampler_names = [

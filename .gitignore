@@ -2,7 +2,6 @@ poetry.lock
 .venv
 
 data
-results/**/data_*
 
 __pycache__
 .ipynb_checkpoints

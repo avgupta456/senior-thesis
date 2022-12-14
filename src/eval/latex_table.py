@@ -85,13 +85,13 @@ def create_latex_table(datasets, dataset_names, sampler_names, k_arr):
 if __name__ == "__main__":
     group = "" if len(sys.argv) < 2 else sys.argv[1]
 
-    with open("./results/data/data_facebook_0_300.json", "r") as f:
+    with open("./results/raw_data/data_facebook_0_300.json", "r") as f:
         facebook_data = json.load(f)
 
-    with open("./results/data/data_imdb_0_10000.json", "r") as f:
+    with open("./results/raw_data/data_imdb_0_10000.json", "r") as f:
         imdb_data = json.load(f)
 
-    with open("./results/data/data_lastfm_0_1000.json", "r") as f:
+    with open("./results/raw_data/data_lastfm_0_1000.json", "r") as f:
         lastfm_data = json.load(f)
 
     sampler_names = [
