@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>CPSC 490 Project Report</title>
+  </head>
+  <body>
+    <h1>Link Explanation for Heterogeneous Graphs</h1>
+    <b>Author: Abhijit Gupta</b>
+    <br />
+    <br />
+    <b>Advisor: Rex Ying</b>
+    <br />
+    <h3>Abstract</h3>
+    <p>
+      Graph Neural Networks (GNNs) utilize message passing to operate directly
+      on graph structured data, and have achieved state-of-the-art performance
+      in node classification, link prediction, and graph classification tasks.
+      In order to build trust, promote transparency, and facilitate real-world
+      applications, GNNs must be made explainable. But while models such as
+      GNNExplainer and SubgraphX explain node and graph classification tasks,
+      link explanation, particularly on heterogeneous graphs, remains
+      underexplored. In this work, we propose a new explanation format for link
+      prediction, where only a subset of immediate neighbors of the target edge
+      are selected. We test four explanation methods on the Facebook, IMDB, and
+      LastFM heterogeneous graph datasets. Each dataset has distinct properties
+      that encourage a robust explanation model. We sample explanations of
+      varying sparsity and measure the characterization score to assess a
+      candidate explanation's necessity and sufficiency. We report
+      characterization scores for 1-node, 5-node, and 10-node explanations. We
+      make key changes to the GNNExplainer loss function and to the SubgraphX
+      filtering method that yield significant improvements in explanation
+      quality. Overall, we find our modified SubgraphX method outperforms
+      existing baselines by 11% and our modified GNNExplainer outperforms
+      existing baselines by 21% on average. The embedding baseline remains a
+      fast and viable approach for small explanations on high degree graphs,
+      while GNNExplainer produces the strongest explanations across all other
+      configurations. Additionally, we make open-source contributions to the
+      PyTorch Geometric library to allow for future extensions. Altogether, our
+      work is the first exploration of heterogeneous link explanation and lays
+      the foundation for future explanation approaches.
+    </p>
+    <a href="Project_Proposal.pdf">Proposal</a>
+    <br />
+    <a href="Final_Report.pdf">Paper</a>
+    <br />
+    <a href="Presentation.pdf">Presentation</a>
+    <br />
+    <a href="Poster.pdf">Poster</a>
+    <br />
+    <a href="https://github.com/avgupta456/senior-thesis">Code</a>
+  </body>
+</html>
